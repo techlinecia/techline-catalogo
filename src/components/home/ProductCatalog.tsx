@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import ProductCard from "@/components/products/ProductCard";
-import ProductModal from "@/components/products/ProductModal";
 
 type Category =
   | "Todos"
@@ -170,9 +169,6 @@ export default function ProductCatalog() {
 
   const [search, setSearch] = useState("");
 
-  const [selectedProduct, setSelectedProduct] =
-    useState<Product | null>(null);
-
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       const categoryMatches =
@@ -228,7 +224,6 @@ export default function ProductCatalog() {
       slug={product.slug}
       badge={product.badge}
       image={product.image}
-      onClick={() => setSelectedProduct(product)}
     />
   );
 
@@ -303,7 +298,9 @@ export default function ProductCatalog() {
 
                     <span className="catalog-count">
                       {items.length}{" "}
-                      {items.length === 1 ? "produto" : "produtos"}
+                      {items.length === 1
+                        ? "produto"
+                        : "produtos"}
                     </span>
                   </div>
 
@@ -316,26 +313,6 @@ export default function ProductCatalog() {
           </div>
         )}
       </div>
-
-      <ProductModal
-        open={selectedProduct !== null}
-        onClose={() => setSelectedProduct(null)}
-        product={
-          selectedProduct
-            ? {
-                name: selectedProduct.name,
-                category: selectedProduct.subcategory,
-                price: selectedProduct.price,
-                status: selectedProduct.status,
-                badge: selectedProduct.badge,
-                description: selectedProduct.description,
-                variants: selectedProduct.variants,
-                highlights: selectedProduct.highlights,
-                specifications: selectedProduct.specifications,
-              }
-            : null
-        }
-      />
     </section>
   );
 }

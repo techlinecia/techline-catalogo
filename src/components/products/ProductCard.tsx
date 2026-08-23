@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 type ProductCardProps = {
   name: string;
   category: string;
@@ -8,7 +10,6 @@ type ProductCardProps = {
   slug: string;
   badge?: string;
   image?: string;
-  onClick?: () => void;
 };
 
 export default function ProductCard({
@@ -16,14 +17,20 @@ export default function ProductCard({
   category,
   price,
   status,
+  slug,
   badge,
   image,
-  onClick,
 }: ProductCardProps) {
+  const router = useRouter();
+
+  const openProduct = () => {
+    router.push(`/produto/${slug}`);
+  };
+
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={openProduct}
       className="
         group
         w-full
@@ -82,7 +89,14 @@ export default function ProductCard({
           <img
             src={image}
             alt={name}
-            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+            className="
+              h-full
+              w-full
+              object-cover
+              transition
+              duration-300
+              group-hover:scale-[1.03]
+            "
           />
         ) : (
           <p
@@ -138,6 +152,7 @@ export default function ProductCard({
 
         <div className="mt-2 flex min-w-0 items-center gap-1.5">
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
+
           <span className="truncate text-[8px] text-emerald-400 sm:text-[9px] md:text-[10px]">
             {status}
           </span>
@@ -148,7 +163,16 @@ export default function ProductCard({
             {price}
           </p>
 
-          <span className="shrink-0 text-sm text-cyan-400 transition-transform group-hover:translate-x-1 md:text-lg">
+          <span
+            className="
+              shrink-0
+              text-sm
+              text-cyan-400
+              transition-transform
+              group-hover:translate-x-1
+              md:text-lg
+            "
+          >
             →
           </span>
         </div>
