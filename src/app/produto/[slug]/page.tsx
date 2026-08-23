@@ -52,10 +52,12 @@ export default function ProductPage({
       open={true}
       onClose={() => router.push("/")}
       product={{
+        slug: product.slug,
         name: product.name,
         category: product.subcategory,
         price: product.price,
         status: product.status,
+        image: product.image,
         badge: product.badge,
         description: product.description,
         variants: product.variants,

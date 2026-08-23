@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useCart } from "@/context/CartContext";
 
 type ProductVariant = {
   name: string;
@@ -20,9 +21,11 @@ type ProductModalProps = {
   open: boolean;
   onClose: () => void;
   product: {
+    slug: string;
     name: string;
     category: string;
     price: string;
+    image?: string;
     status: string;
     description?: string;
     badge?: string;
@@ -43,6 +46,20 @@ export default function ProductModal({
   const [isLightMode, setIsLightMode] = useState(false);
   const [search, setSearch] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const {
+    items,
+    totalItems,
+    totalPrice,
+    isCartOpen,
+    addItem,
+    removeItem,
+    increaseItem,
+    decreaseItem,
+    clearCart,
+    openCart,
+    closeCart,
+  } = useCart();
 
   useEffect(() => {
     if (open) {
@@ -118,6 +135,52 @@ export default function ProductModal({
     } do ${product.name}${variantText}, por ${product.price} cada. Ainda está disponível?`
   );
 
+  const productPriceNumber = Number(
+    product.price
+      .replace(/[^\d,.-]/g, "")
+      .replace(/\./g, "")
+      .replace(",", ".")
+  );
+
+  const selectedCartImage =
+    currentImages[selectedImageIndex] ||
+    currentImages[0] ||
+    product.image;
+
+  const handleAddToCart = () => {
+    if (currentStock <= 0) return;
+
+    addItem({
+      slug: product.slug,
+      name: product.name,
+      image: selectedCartImage,
+      price: productPriceNumber,
+      variation: selectedVariant?.name,
+      quantity,
+      maxStock: currentStock,
+    });
+  };
+
+  const formatMoney = (value: number) =>
+    new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+
+  const cartWhatsappMessage = encodeURIComponent(
+    [
+      "Olá! Vim pelo catálogo da TECH LINE e quero finalizar este pedido:",
+      "",
+      ...items.flatMap((item) => [
+        `${item.quantity}x ${item.name}${item.variation ? ` - ${item.variation}` : ""}`,
+        `${formatMoney(item.price)} cada`,
+        `Subtotal: ${formatMoney(item.price * item.quantity)}`,
+        "",
+      ]),
+      `Total: ${formatMoney(totalPrice)}`,
+    ].join("\n")
+  );
+
   const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -154,11 +217,11 @@ export default function ProductModal({
           } backdrop-blur-xl`}
         >
           <div className="mx-auto max-w-7xl px-4 md:px-6">
-            <div className="flex h-[72px] items-center justify-between">
+            <div className="grid h-[72px] grid-cols-[1fr_auto_1fr] items-center">
               <button
                 type="button"
                 onClick={() => setMenuOpen(true)}
-                className={`flex h-11 w-11 items-center justify-center border ${border} ${primaryText}`}
+                className={`flex h-11 w-11 items-center justify-center justify-self-start border ${border} ${primaryText}`}
                 aria-label="Abrir menu"
               >
                 <span className="text-2xl leading-none">☰</span>
@@ -177,22 +240,39 @@ export default function ProductModal({
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setIsLightMode((current) => !current)}
-                className={`relative flex h-11 w-[70px] items-center rounded-full border ${border} ${
-                  isLightMode ? "bg-zinc-200" : "bg-[#0c1216]"
-                } p-1 transition`}
-                aria-label="Alternar tema claro e escuro"
-              >
-                <span
-                  className={`absolute flex h-8 w-8 items-center justify-center rounded-full bg-cyan-400 text-base text-black transition-transform ${
-                    isLightMode ? "translate-x-[28px]" : "translate-x-0"
-                  }`}
+              <div className="flex items-center justify-self-end gap-2">
+                <button
+                  type="button"
+                  onClick={openCart}
+                  className={`relative flex h-11 w-11 items-center justify-center border ${border} ${primaryText} transition hover:border-cyan-400 hover:text-cyan-400`}
+                  aria-label="Abrir carrinho"
                 >
-                  {isLightMode ? "☀" : "☾"}
-                </span>
-              </button>
+                  <span className="text-lg">🛒</span>
+
+                  {totalItems > 0 && (
+                    <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-cyan-400 px-1 text-[10px] font-black text-black">
+                      {totalItems}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsLightMode((current) => !current)}
+                  className={`relative flex h-11 w-[58px] items-center rounded-full border ${border} ${
+                    isLightMode ? "bg-zinc-200" : "bg-[#0c1216]"
+                  } p-1 transition`}
+                  aria-label="Alternar tema claro e escuro"
+                >
+                  <span
+                    className={`absolute flex h-8 w-8 items-center justify-center rounded-full bg-cyan-400 text-base text-black transition-transform ${
+                      isLightMode ? "translate-x-[18px]" : "translate-x-0"
+                    }`}
+                  >
+                    {isLightMode ? "☀" : "☾"}
+                  </span>
+                </button>
+              </div>
             </div>
 
             <form onSubmit={handleSearch} className="flex gap-0 pb-4">
@@ -296,6 +376,196 @@ export default function ProductModal({
                 CIANORTE • PR
               </p>
             </div>
+          </aside>
+        </div>
+
+        {/* CARRINHO LATERAL */}
+        <div
+          className={`fixed inset-0 z-[90] transition ${
+            isCartOpen ? "pointer-events-auto" : "pointer-events-none"
+          }`}
+          aria-hidden={!isCartOpen}
+        >
+          <button
+            type="button"
+            onClick={closeCart}
+            className={`absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity ${
+              isCartOpen ? "opacity-100" : "opacity-0"
+            }`}
+            aria-label="Fechar carrinho"
+          />
+
+          <aside
+            className={`absolute right-0 top-0 flex h-full w-full max-w-[420px] flex-col border-l ${border} ${
+              isLightMode ? "bg-white" : "bg-[#080b0d]"
+            } shadow-2xl transition-transform duration-300 ${
+              isCartOpen ? "translate-x-0" : "translate-x-full"
+            }`}
+          >
+            <div className={`flex h-[72px] items-center justify-between border-b ${border} px-5`}>
+              <div>
+                <p className={`text-lg font-black ${primaryText}`}>
+                  Seu carrinho
+                </p>
+                <p className={`mt-1 text-xs ${secondaryText}`}>
+                  {totalItems} {totalItems === 1 ? "item" : "itens"}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeCart}
+                className={`flex h-10 w-10 items-center justify-center border ${border} text-xl ${primaryText}`}
+                aria-label="Fechar carrinho"
+              >
+                ×
+              </button>
+            </div>
+
+            {items.length === 0 ? (
+              <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+                <span className="text-4xl">🛒</span>
+                <p className={`mt-5 text-lg font-black ${primaryText}`}>
+                  Seu carrinho está vazio
+                </p>
+                <p className={`mt-2 max-w-[260px] text-sm leading-6 ${secondaryText}`}>
+                  Adicione um produto para montar seu pedido.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={closeCart}
+                  className="mt-6 bg-cyan-400 px-5 py-3 text-sm font-black text-black"
+                >
+                  Continuar comprando
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="flex-1 overflow-y-auto p-4 md:p-5">
+                  <div className="space-y-3">
+                    {items.map((item) => (
+                      <article
+                        key={item.cartId}
+                        className={`border ${border} ${softPanel} p-3`}
+                      >
+                        <div className="flex gap-3">
+                          <div
+                            className={`h-20 w-20 shrink-0 overflow-hidden border ${border} ${
+                              isLightMode ? "bg-zinc-100" : "bg-[#0b1013]"
+                            }`}
+                          >
+                            {item.image ? (
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full items-center justify-center text-[8px] text-zinc-600">
+                                SEM FOTO
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <p className={`line-clamp-2 text-sm font-black ${primaryText}`}>
+                              {item.name}
+                            </p>
+
+                            {item.variation && (
+                              <p className={`mt-1 text-xs ${secondaryText}`}>
+                                Cor: {item.variation}
+                              </p>
+                            )}
+
+                            <p className="mt-2 text-sm font-black text-cyan-400">
+                              {formatMoney(item.price)}
+                            </p>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => removeItem(item.cartId)}
+                            className="self-start text-lg text-zinc-500 transition hover:text-red-400"
+                            aria-label={`Remover ${item.name}`}
+                          >
+                            ×
+                          </button>
+                        </div>
+
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <div className={`flex h-10 items-center border ${border}`}>
+                            <button
+                              type="button"
+                              onClick={() => decreaseItem(item.cartId)}
+                              className={`flex h-full w-10 items-center justify-center text-lg ${primaryText}`}
+                            >
+                              −
+                            </button>
+
+                            <span
+                              className={`flex h-full min-w-10 items-center justify-center border-x ${border} text-sm font-black ${primaryText}`}
+                            >
+                              {item.quantity}
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() => increaseItem(item.cartId)}
+                              disabled={item.quantity >= item.maxStock}
+                              className={`flex h-full w-10 items-center justify-center text-lg ${primaryText} disabled:text-zinc-700`}
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          <p className={`text-sm font-black ${primaryText}`}>
+                            {formatMoney(item.price * item.quantity)}
+                          </p>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={`border-t ${border} p-4 md:p-5`}>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className={`text-sm ${secondaryText}`}>Total</span>
+                    <strong className="text-2xl font-black text-cyan-400">
+                      {formatMoney(totalPrice)}
+                    </strong>
+                  </div>
+
+                  <a
+                    href={`https://wa.me/5544991373517?text=${cartWhatsappMessage}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-4 flex min-h-14 w-full items-center justify-center bg-cyan-400 px-5 text-center text-sm font-black uppercase tracking-wide text-black transition hover:bg-cyan-300"
+                  >
+                    Finalizar pelo WhatsApp
+                  </a>
+
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={closeCart}
+                      className={`min-h-11 border ${border} px-3 text-xs font-bold ${primaryText}`}
+                    >
+                      Continuar comprando
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={clearCart}
+                      className="min-h-11 border border-red-500/30 px-3 text-xs font-bold text-red-400 transition hover:border-red-400"
+                    >
+                      Limpar carrinho
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </aside>
         </div>
 
@@ -558,6 +828,20 @@ export default function ProductModal({
                 )}
               </div>
 
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={currentStock === 0}
+                className={`mt-6 flex min-h-14 w-full items-center justify-center gap-3 border px-5 text-center text-sm font-black uppercase tracking-wide transition ${
+                  currentStock > 0
+                    ? "border-cyan-400 bg-transparent text-cyan-400 hover:bg-cyan-400 hover:text-black"
+                    : "cursor-not-allowed border-zinc-800 text-zinc-600"
+                }`}
+              >
+                <span className="text-lg">🛒</span>
+                Adicionar ao carrinho
+              </button>
+
               <a
                 href={
                   currentStock > 0
@@ -567,7 +851,7 @@ export default function ProductModal({
                 target="_blank"
                 rel="noreferrer"
                 aria-disabled={currentStock === 0}
-                className={`mt-6 flex min-h-14 w-full items-center justify-center gap-3 px-5 text-center text-sm font-black uppercase tracking-wide transition ${
+                className={`mt-3 flex min-h-14 w-full items-center justify-center gap-3 px-5 text-center text-sm font-black uppercase tracking-wide transition ${
                   currentStock > 0
                     ? "bg-cyan-400 text-black hover:bg-cyan-300"
                     : "pointer-events-none bg-zinc-800 text-zinc-500"
