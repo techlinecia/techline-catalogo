@@ -1,0 +1,309 @@
+@import "tailwindcss";
+
+/* ========================================
+   CATÁLOGO DE PRODUTOS
+======================================== */
+
+.catalog-section {
+  background: #080c0e;
+  padding: 90px 24px;
+}
+
+.catalog-container {
+  width: 100%;
+  max-width: 1230px;
+  margin: 0 auto;
+}
+
+.catalog-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 40px;
+  margin-bottom: 38px;
+}
+
+.catalog-eyebrow {
+  display: block;
+  color: #00d9f5;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  margin-bottom: 12px;
+}
+
+.catalog-heading h2 {
+  color: #fff;
+  font-size: clamp(36px, 4vw, 54px);
+  line-height: 1;
+  margin: 0;
+}
+
+.catalog-search {
+  width: 290px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #354047;
+  padding-bottom: 12px;
+}
+
+.catalog-search span {
+  color: #00d9f5;
+  font-size: 22px;
+}
+
+.catalog-search input {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: #fff;
+  font-size: 14px;
+}
+
+.catalog-search input::placeholder {
+  color: #78838a;
+}
+
+.catalog-category-scroll {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.catalog-category-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.catalog-categories {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  width: max-content;
+}
+
+.catalog-categories button {
+  position: relative;
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: #8c989f;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0 0 14px;
+  white-space: nowrap;
+  transition: 0.2s ease;
+}
+
+.catalog-categories button:hover {
+  color: #fff;
+}
+
+.catalog-categories button.active {
+  color: #00d9f5;
+}
+
+.catalog-categories button.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: #00d9f5;
+}
+
+.catalog-divider {
+  height: 1px;
+  background: #20292e;
+  margin-bottom: 60px;
+}
+
+.catalog-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 85px;
+}
+
+.catalog-group-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.catalog-group-heading span:first-child {
+  color: #00d9f5;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.catalog-group-heading h3 {
+  color: #fff;
+  margin: 7px 0 0;
+  font-size: 30px;
+}
+
+.catalog-count {
+  color: #657178;
+  font-size: 12px;
+}
+
+.catalog-products-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+/* ========================================
+   TABLET
+======================================== */
+
+@media (max-width: 900px) {
+  .catalog-section {
+    padding: 70px 20px;
+  }
+
+  .catalog-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .catalog-search {
+    width: 100%;
+  }
+
+  .catalog-products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .catalog-divider {
+    margin-bottom: 48px;
+  }
+
+  .catalog-groups {
+    gap: 60px;
+  }
+}
+
+/* ========================================
+   CELULAR
+======================================== */
+
+@media (max-width: 600px) {
+  .catalog-section {
+    padding: 42px 12px;
+  }
+
+  .catalog-container {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .catalog-heading {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  .catalog-eyebrow {
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    margin-bottom: 10px;
+  }
+
+  .catalog-heading h2 {
+    font-size: 32px;
+    line-height: 1.05;
+  }
+
+  .catalog-search {
+    width: 100%;
+    padding-bottom: 10px;
+  }
+
+  .catalog-search span {
+    font-size: 20px;
+  }
+
+  .catalog-search input {
+    font-size: 13px;
+  }
+
+  .catalog-category-scroll {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .catalog-categories {
+    gap: 20px;
+    width: max-content;
+    min-width: max-content;
+    padding-right: 18px;
+  }
+
+  .catalog-categories button {
+    font-size: 11px;
+    padding-bottom: 11px;
+  }
+
+  .catalog-divider {
+    margin-bottom: 34px;
+  }
+
+  .catalog-products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .catalog-groups {
+    gap: 44px;
+  }
+
+  .catalog-group-heading {
+    margin-bottom: 14px;
+  }
+
+  .catalog-group-heading span:first-child {
+    font-size: 9px;
+    letter-spacing: 2px;
+  }
+
+  .catalog-group-heading h3 {
+    margin-top: 6px;
+    font-size: 22px;
+  }
+
+  .catalog-count {
+    display: none;
+  }
+}
+
+/* ========================================
+   CELULARES MUITO PEQUENOS
+======================================== */
+
+@media (max-width: 360px) {
+  .catalog-section {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .catalog-products-grid {
+    gap: 8px;
+  }
+
+  .catalog-categories {
+    gap: 16px;
+  }
+
+  .catalog-heading h2 {
+    font-size: 29px;
+  }
+}
