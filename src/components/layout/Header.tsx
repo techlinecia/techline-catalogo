@@ -148,6 +148,32 @@ export default function Header() {
     { label: "Contato", href: "/#contato" },
   ];
 
+  const openMenuFromCart = () => {
+    closeCart();
+
+    setTimeout(() => {
+      setMenuOpen(true);
+    }, 220);
+  };
+
+  const openSearchFromCart = () => {
+    closeCart();
+
+    setTimeout(() => {
+      const searchInput = document.querySelector<HTMLInputElement>(
+        'input[type="search"]'
+      );
+
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 320);
+  };
+
   return (
     <>
       <header
@@ -420,8 +446,67 @@ export default function Header() {
             isCartOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
+          {/* TOPO MOBILE DO CARRINHO */}
           <div
-            className={`flex h-[72px] items-center justify-between border-b ${border} px-5`}
+            className={`grid min-h-[72px] grid-cols-[44px_1fr_44px_44px] items-center gap-2 border-b ${border} px-4 md:hidden`}
+          >
+            <button
+              type="button"
+              onClick={openMenuFromCart}
+              className={`flex h-11 w-11 items-center justify-center border ${border} text-2xl ${primaryText}`}
+              aria-label="Abrir menu"
+            >
+              ☰
+            </button>
+
+            <Link
+              href="/"
+              onClick={closeCart}
+              className="justify-self-center text-center"
+            >
+              <span className={`text-[20px] font-black tracking-[0.12em] ${primaryText}`}>
+                TECH
+              </span>
+              <span className="ml-2 text-[20px] font-black tracking-[0.12em] text-cyan-400">
+                LINE
+              </span>
+            </Link>
+
+            <button
+              type="button"
+              onClick={openSearchFromCart}
+              className={`flex h-11 w-11 items-center justify-center text-[28px] ${primaryText}`}
+              aria-label="Buscar produtos"
+            >
+              ⌕
+            </button>
+
+            <button
+              type="button"
+              onClick={closeCart}
+              className={`flex h-11 w-11 items-center justify-center border ${border} text-2xl ${primaryText}`}
+              aria-label="Fechar carrinho"
+            >
+              ×
+            </button>
+          </div>
+
+          {/* TÍTULO MOBILE */}
+          <div className={`border-b ${border} px-5 py-5 md:hidden`}>
+            <p className={`text-2xl font-black ${primaryText}`}>
+              {checkoutStep === "checkout" ? "Finalizar pedido" : "Seu carrinho"}
+            </p>
+
+            <p className={`mt-2 text-sm ${secondaryText}`}>
+              {checkoutStep === "checkout"
+                ? "Revise os dados antes de enviar"
+                : `${totalItems} ${totalItems === 1 ? "item" : "itens"}`}
+            </p>
+          </div>
+
+          {/* TOPO DESKTOP */}
+          <div
+            className={`hidden h-[72px] items-center justify-between border-b ${border} px-5 md:flex`}
           >
             <div>
               <p className={`text-lg font-black ${primaryText}`}>
@@ -593,6 +678,13 @@ export default function Header() {
                   >
                     Limpar carrinho
                   </button>
+                </div>
+
+                <div className={`mt-5 flex items-start gap-3 text-xs leading-5 ${secondaryText}`}>
+                  <span className="text-lg">♢</span>
+                  <p>
+                    Seus dados ficam apenas na finalização e o pedido será enviado pelo WhatsApp.
+                  </p>
                 </div>
               </div>
             </>
@@ -832,6 +924,13 @@ export default function Header() {
                 >
                   Voltar ao carrinho
                 </button>
+
+                <div className={`mt-5 flex items-start gap-3 text-xs leading-5 ${secondaryText}`}>
+                  <span className="text-lg">♢</span>
+                  <p>
+                    Seus dados ficam apenas na finalização e o pedido será enviado pelo WhatsApp.
+                  </p>
+                </div>
               </div>
             </>
           )}
