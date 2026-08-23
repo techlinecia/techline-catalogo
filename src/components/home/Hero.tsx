@@ -5,21 +5,26 @@ export default function Hero() {
     <section className="hero-techline relative overflow-hidden">
       {/* FOTO */}
       <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        className="
+          absolute
+          inset-0
+          bg-cover
+          bg-no-repeat
+          bg-[position:68%_center]
+          md:bg-center
+        "
         style={{
           backgroundImage: "url('/banner-techline.png')",
         }}
       />
 
-     
-
-      <div className="relative mx-auto flex min-h-[560px] max-w-7xl items-center px-4 py-16 sm:min-h-[620px] md:min-h-[650px] md:px-6 md:py-20">
+      <div className="relative mx-auto flex min-h-[500px] max-w-7xl items-center px-4 py-12 sm:min-h-[560px] md:min-h-[650px] md:px-6 md:py-20">
         <div className="max-w-2xl">
-          <span className="hero-badge mb-5 inline-flex border px-4 py-2 text-[10px] font-bold uppercase tracking-[0.22em] sm:text-xs">
+          <span className="hero-badge mb-4 inline-flex border px-4 py-2 text-[10px] font-bold uppercase tracking-[0.22em] sm:mb-5 sm:text-xs">
             PRODUTOS À PRONTA ENTREGA
           </span>
 
-          <h1 className="hero-title max-w-3xl text-4xl font-black leading-[0.95] tracking-tight sm:text-5xl md:text-7xl">
+          <h1 className="hero-title max-w-[520px] text-[42px] font-black leading-[0.95] tracking-tight sm:max-w-3xl sm:text-5xl md:text-7xl">
             Seu próximo
             <span className="block text-cyan-400">
               upgrade
@@ -27,11 +32,11 @@ export default function Hero() {
             começa aqui.
           </h1>
 
-          <p className="hero-description mt-6 max-w-xl text-sm leading-7 sm:text-base md:text-lg">
+          <p className="hero-description mt-5 max-w-xl text-[15px] leading-7 sm:mt-6 sm:text-base md:text-lg">
             Hardware, periféricos, acessórios e assistência técnica em um só lugar.
           </p>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row">
             <Link
               href="/#produtos"
               className="bg-cyan-400 px-6 py-3 text-center text-sm font-black text-black transition hover:bg-cyan-300"
