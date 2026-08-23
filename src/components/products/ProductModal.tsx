@@ -42,6 +42,7 @@ export default function ProductModal({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isLightMode, setIsLightMode] = useState(false);
   const [search, setSearch] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -49,6 +50,7 @@ export default function ProductModal({
       setQuantity(1);
       setSelectedImageIndex(0);
       setSearch("");
+      setMenuOpen(false);
     }
   }, [open, product]);
 
@@ -147,9 +149,9 @@ export default function ProductModal({
           <div className="mx-auto flex h-[72px] max-w-5xl items-center justify-between px-4 md:px-8">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => setMenuOpen(true)}
               className={`flex h-11 w-11 items-center justify-center border ${border} ${primaryText}`}
-              aria-label="Voltar ao catálogo"
+              aria-label="Abrir menu"
             >
               <span className="text-2xl leading-none">☰</span>
             </button>
@@ -207,6 +209,81 @@ export default function ProductModal({
             </button>
           </form>
         </header>
+
+
+        {/* MENU LATERAL */}
+        <div
+          className={`fixed inset-0 z-[80] transition ${
+            menuOpen ? "pointer-events-auto" : "pointer-events-none"
+          }`}
+          aria-hidden={!menuOpen}
+        >
+          <button
+            type="button"
+            onClick={() => setMenuOpen(false)}
+            className={`absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity ${
+              menuOpen ? "opacity-100" : "opacity-0"
+            }`}
+            aria-label="Fechar menu"
+          />
+
+          <aside
+            className={`absolute left-0 top-0 h-full w-[82%] max-w-[340px] border-r ${border} ${
+              isLightMode ? "bg-white" : "bg-[#080b0d]"
+            } shadow-2xl transition-transform duration-300 ${
+              menuOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
+          >
+            <div className={`flex h-[72px] items-center justify-between border-b ${border} px-5`}>
+              <div>
+                <p className="text-lg font-black tracking-[0.22em]">
+                  <span className={primaryText}>TECH </span>
+                  <span className="text-cyan-400">LINE</span>
+                </p>
+
+                <p className={`mt-1 text-[7px] font-bold tracking-[0.28em] ${mutedText}`}>
+                  PERFORMANCE + TECNOLOGIA
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setMenuOpen(false)}
+                className={`flex h-10 w-10 items-center justify-center border ${border} ${primaryText}`}
+                aria-label="Fechar menu"
+              >
+                ×
+              </button>
+            </div>
+
+            <nav className="px-5 py-6">
+              {[
+                { label: "Início", href: "/" },
+                { label: "Produtos", href: "/produtos" },
+                { label: "Ofertas", href: "/ofertas" },
+                { label: "Serviços", href: "/servicos" },
+                { label: "Contato", href: "/contato" },
+              ].map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setMenuOpen(false)}
+                  className={`flex items-center justify-between border-b ${border} py-5 text-base font-semibold transition hover:text-cyan-400 ${primaryText}`}
+                >
+                  <span>{item.label}</span>
+                  <span className="text-cyan-400">→</span>
+                </a>
+              ))}
+            </nav>
+
+            <div className={`absolute bottom-0 left-0 right-0 border-t ${border} p-5`}>
+              <p className={`text-xs ${secondaryText}`}>Catálogo Tech Line</p>
+              <p className="mt-1 text-[10px] font-bold tracking-[0.2em] text-cyan-400">
+                CIANORTE • PR
+              </p>
+            </div>
+          </aside>
+        </div>
 
         <section className={`${imageBg} px-4 pb-5 pt-5 md:px-8 md:pb-8 md:pt-8`}>
           <div
