@@ -13,10 +13,72 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+/*
+ * URL DO SITE
+ *
+ * Na Vercel pega automaticamente o domínio publicado.
+ * Localmente usa localhost:3000.
+ */
+const siteUrl =
+  process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000";
+
 export const metadata: Metadata = {
-  title: "Tech Line | Informática e Tecnologia",
+  metadataBase: new URL(siteUrl),
+
+  title: "Catálogo Tech Line",
+
   description:
-    "Catálogo da Tech Line. Hardware, periféricos, acessórios e produtos para seu setup.",
+    "Hardware, periféricos, acessórios, produtos para setup e assistência técnica na Tech Line.",
+
+  icons: {
+    icon: [
+      {
+        url: "/favicon-techline.png?v=4",
+        type: "image/png",
+      },
+    ],
+    shortcut: "/favicon-techline.png?v=4",
+    apple: "/favicon-techline.png?v=4",
+  },
+
+  openGraph: {
+    title: "Catálogo Tech Line",
+
+    description:
+      "Hardware, periféricos, acessórios e tecnologia. Confira os produtos disponíveis na Tech Line.",
+
+    type: "website",
+
+    locale: "pt_BR",
+
+    siteName: "Tech Line",
+
+    images: [
+      {
+        url: "/Banner%20futurista%20Techline.png",
+        width: 1200,
+        height: 630,
+        alt: "Catálogo Tech Line",
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+
+    title: "Catálogo Tech Line",
+
+    description:
+      "Hardware, periféricos, acessórios e tecnologia. Confira os produtos disponíveis na Tech Line.",
+
+    images: [
+      "/Banner%20futurista%20Techline.png",
+    ],
+  },
 };
 
 export default function RootLayout({
