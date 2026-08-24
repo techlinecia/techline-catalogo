@@ -4,22 +4,26 @@ const categories = [
   {
     name: "Hardware",
     description: "Peças e componentes para seu PC",
-    href: "/produtos?categoria=hardware",
+    href: "/?categoria=hardware#produtos",
+    image: "/Hardware.png",
   },
   {
     name: "Periféricos",
     description: "Tudo para completar seu setup",
-    href: "/produtos?categoria=perifericos",
+    href: "/?categoria=perifericos#produtos",
+    image: "/Periféricos.png",
   },
   {
     name: "Gabinetes",
     description: "Estilo e espaço para sua máquina",
-    href: "/produtos?categoria=gabinetes",
+    href: "/?categoria=gabinetes#produtos",
+    image: "/Gabinetes.png",
   },
   {
     name: "Decoração para Setup",
     description: "Deixe seu espaço com a sua cara",
-    href: "/produtos?categoria=decoracao",
+    href: "/?categoria=decoracao#produtos",
+    image: "/Setup.png",
   },
 ];
 
@@ -39,7 +43,7 @@ export default function Categories() {
           </div>
 
           <Link
-            href="/produtos"
+            href="/#produtos"
             className="hidden text-sm font-semibold text-cyan-400 transition hover:text-cyan-300 md:block"
           >
             Ver todas →
@@ -51,31 +55,41 @@ export default function Categories() {
             <Link
               key={category.name}
               href={category.href}
-              className="group relative flex min-h-[190px] flex-col justify-end overflow-hidden border border-white/10 bg-[#10161a] p-5 transition hover:border-cyan-400/50 md:min-h-[260px] md:p-6"
+              className="group overflow-hidden border border-white/10 bg-[#10161a] transition hover:-translate-y-1 hover:border-cyan-400/60 hover:shadow-[0_0_30px_rgba(34,211,238,0.10)]"
             >
-              <div className="absolute right-[-45px] top-[-45px] h-36 w-36 rounded-full border border-cyan-400/10 transition group-hover:border-cyan-400/30 md:h-40 md:w-40" />
+              <div className="relative aspect-[16/10] overflow-hidden bg-black">
+                <img
+                  src={category.image}
+                  alt={category.name}
+                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                />
 
-              <span className="mb-2 text-[10px] font-bold tracking-[0.18em] text-cyan-400 md:mb-3 md:text-xs md:tracking-[0.2em]">
-                TECH LINE
-              </span>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+              </div>
 
-              <h3 className="max-w-[220px] text-xl font-bold leading-tight text-white md:text-2xl">
-                {category.name}
-              </h3>
+              <div className="p-5 md:p-6">
+                <span className="mb-2 block text-[10px] font-bold tracking-[0.18em] text-cyan-400 md:text-xs md:tracking-[0.2em]">
+                  TECH LINE
+                </span>
 
-              <p className="mt-2 max-w-[240px] text-sm leading-5 text-zinc-400">
-                {category.description}
-              </p>
+                <h3 className="max-w-[220px] text-xl font-black leading-tight text-white md:text-2xl">
+                  {category.name}
+                </h3>
 
-              <span className="mt-4 text-lg text-cyan-400 transition-transform group-hover:translate-x-2 md:mt-5 md:text-xl">
-                →
-              </span>
+                <p className="mt-2 max-w-[240px] text-sm leading-5 text-zinc-400">
+                  {category.description}
+                </p>
+
+                <span className="mt-4 inline-block text-lg text-cyan-400 transition-transform group-hover:translate-x-2 md:mt-5 md:text-xl">
+                  →
+                </span>
+              </div>
             </Link>
           ))}
         </div>
 
         <Link
-          href="/produtos"
+          href="/#produtos"
           className="mt-6 block text-sm font-semibold text-cyan-400 md:hidden"
         >
           Ver todas as categorias →

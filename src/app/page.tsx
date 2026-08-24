@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+
 import Header from "@/components/layout/Header";
 import Hero from "@/components/home/Hero";
 import Categories from "@/components/home/Categories";
@@ -13,7 +15,20 @@ export default function Home() {
         <Hero />
         <Categories />
         <ReadyToDeliver />
-        <ProductCatalog />
+
+        <Suspense
+          fallback={
+            <section className="catalog-section">
+              <div className="catalog-container py-16 text-center">
+                <p className="text-sm text-zinc-500">
+                  Carregando produtos...
+                </p>
+              </div>
+            </section>
+          }
+        >
+          <ProductCatalog />
+        </Suspense>
       </main>
     </>
   );

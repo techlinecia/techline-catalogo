@@ -29,6 +29,9 @@ type ProductModalProps = {
     status: string;
     description?: string;
     badge?: string;
+    condition?: "Novo" | "Usado";
+    conditionNote?: string;
+    stock?: number;
     variants?: ProductVariant[];
     highlights?: ProductHighlight[];
     specifications?: ProductSpecification[];
@@ -75,9 +78,7 @@ export default function ProductModal({
 
   const currentStock = selectedVariant
     ? selectedVariant.stock
-    : product?.status === "Esgotado"
-      ? 0
-      : 1;
+    : product?.stock ?? (product?.status === "Esgotado" ? 0 : 1);
 
   const currentImages = useMemo(() => {
     if (selectedVariant?.images?.length) {
@@ -129,10 +130,21 @@ export default function ProductModal({
     ? `, na cor ${selectedVariant.name}`
     : "";
 
+  const conditionText =
+    product.condition === "Usado" ? " (produto usado)" : "";
+
   const whatsappMessage = encodeURIComponent(
-    `Olá! Vim pelo catálogo da TECH LINE e tenho interesse em ${quantity} ${
-      quantity === 1 ? "unidade" : "unidades"
-    } do ${product.name}${variantText}, por ${product.price} cada. Ainda está disponível?`
+    [
+      `Olá! Vim pelo catálogo da TECH LINE e tenho interesse em ${quantity} ${
+        quantity === 1 ? "unidade" : "unidades"
+      } do ${product.name}${variantText}${conditionText}, por ${product.price} cada.`,
+      product.condition === "Usado" && product.conditionNote
+        ? `Observação do anúncio: ${product.conditionNote}`
+        : "",
+      "Ainda está disponível?",
+    ]
+      .filter(Boolean)
+      .join("\n")
   );
 
   const productPriceNumber = Number(
@@ -669,11 +681,31 @@ export default function ProductModal({
                 {product.category}
               </p>
 
-              <h1
-                className={`mt-3 text-3xl font-black leading-tight md:text-4xl ${primaryText}`}
-              >
-                {product.name}
-              </h1>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <h1
+                  className={`text-3xl font-black leading-tight md:text-4xl ${primaryText}`}
+                >
+                  {product.name}
+                </h1>
+
+                {product.condition === "Usado" && (
+                  <span className="border border-amber-400/50 bg-amber-400/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-400">
+                    USADO
+                  </span>
+                )}
+              </div>
+
+              {product.condition === "Usado" && product.conditionNote && (
+                <div className="mt-4 border border-amber-400/30 bg-amber-400/10 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-400">
+                    Atenção sobre o produto
+                  </p>
+
+                  <p className={`mt-2 text-sm leading-6 ${primaryText}`}>
+                    {product.conditionNote}
+                  </p>
+                </div>
+              )}
 
               <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2">
                 <div className="flex items-center gap-2">
@@ -728,10 +760,16 @@ export default function ProductModal({
                   <p
                     className={`text-[9px] font-bold uppercase tracking-[0.18em] ${mutedText}`}
                   >
-                    Atendimento
+                    Condição
                   </p>
-                  <p className={`mt-2 text-sm font-bold ${primaryText}`}>
-                    WhatsApp
+                  <p
+                    className={`mt-2 text-sm font-bold ${
+                      product.condition === "Usado"
+                        ? "text-amber-400"
+                        : primaryText
+                    }`}
+                  >
+                    {product.condition ?? "Novo"}
                   </p>
                 </div>
               </div>
@@ -934,6 +972,36 @@ export default function ProductModal({
                     </p>
                   </div>
                 ))}
+
+                <div
+                  className={`border ${
+                    product.condition === "Usado"
+                      ? "border-amber-400/30 bg-amber-400/5"
+                      : `${border} ${panelBg}`
+                  } p-4`}
+                >
+                  <p
+                    className={`text-[9px] font-bold uppercase tracking-[0.18em] ${mutedText}`}
+                  >
+                    Condição
+                  </p>
+
+                  <p
+                    className={`mt-2 text-sm font-bold ${
+                      product.condition === "Usado"
+                        ? "text-amber-400"
+                        : primaryText
+                    }`}
+                  >
+                    {product.condition ?? "Novo"}
+                  </p>
+
+                  {product.condition === "Usado" && product.conditionNote && (
+                    <p className={`mt-2 text-xs leading-5 ${secondaryText}`}>
+                      {product.conditionNote}
+                    </p>
+                  )}
+                </div>
 
                 {selectedVariant && (
                   <div className={`border ${border} ${panelBg} p-4`}>

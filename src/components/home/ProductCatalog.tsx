@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import ProductCard from "@/components/products/ProductCard";
+import { products, type Product } from "@/data/products";
 
 type Category =
   | "Todos"
@@ -9,34 +11,6 @@ type Category =
   | "Periféricos"
   | "Gabinetes"
   | "Decoração para Setup";
-
-type ProductVariant = {
-  name: string;
-  stock: number;
-  color?: string;
-  images?: string[];
-};
-
-type ProductSpecification = {
-  label: string;
-  value: string;
-};
-
-type Product = {
-  id: number;
-  name: string;
-  category: Exclude<Category, "Todos">;
-  subcategory: string;
-  price: string;
-  status: string;
-  slug: string;
-  badge?: string;
-  description?: string;
-  image?: string;
-  variants?: ProductVariant[];
-  highlights?: string[];
-  specifications?: ProductSpecification[];
-};
 
 const categories: Category[] = [
   "Todos",
@@ -46,129 +20,53 @@ const categories: Category[] = [
   "Decoração para Setup",
 ];
 
-const rs7WhiteImages = [
-  "/produtos/Rs7 branco.jpg",
-  "/produtos/rs7 branco2.jpg",
-  "/produtos/rs7 branco3.jpg",
-  "/produtos/rs7 branco4.jpg",
-];
+const categoryFromUrl = (value: string | null): Category => {
+  switch (value?.toLowerCase()) {
+    case "hardware":
+      return "Hardware";
 
-const products: Product[] = [
-  {
-    id: 1,
-    name: "Smailwolf RS7",
-    category: "Periféricos",
-    subcategory: "Mouses",
-    price: "R$ 84,90",
-    status: "Pronta entrega",
-    slug: "smailwolf-rs7",
-    badge: "DESTAQUE",
-    image: "/produtos/Rs7 branco.jpg",
-    description:
-      "Mouse gamer Smailwolf RS7 com visual moderno e conexão versátil. Escolha a cor desejada e consulte o estoque disponível.",
-    variants: [
-      {
-        name: "Branco",
-        stock: 2,
-        color: "#ffffff",
-        images: rs7WhiteImages,
-      },
-      {
-        name: "Preto",
-        stock: 1,
-        color: "#111111",
-        images: [],
-      },
-    ],
-    highlights: [
-      "Conexão com fio, 2.4G e Bluetooth 5.2",
-      "Design moderno para setups gamer",
-      "Botões laterais",
-      "Disponível nas cores branco e preto",
-    ],
-    specifications: [
-      { label: "Marca", value: "Smailwolf" },
-      { label: "Modelo", value: "RS7" },
-      { label: "Conexão", value: "Com fio / 2.4G / Bluetooth 5.2" },
-      { label: "Categoria", value: "Mouse gamer" },
-    ],
-  },
-  {
-    id: 2,
-    name: "Mouse TGT OM85",
-    category: "Periféricos",
-    subcategory: "Mouses",
-    price: "R$ 19,90",
-    status: "Pronta entrega",
-    slug: "mouse-tgt-om85",
-    description:
-      "Mouse TGT OM85 disponível para pronta entrega na TECH LINE.",
-  },
-  {
-    id: 3,
-    name: "Fone QKZ AK6",
-    category: "Periféricos",
-    subcategory: "Fones",
-    price: "R$ 39,90",
-    status: "Pronta entrega",
-    slug: "fone-qkz-ak6",
-    badge: "MAIS PROCURADO",
-    description:
-      "Fone QKZ AK6 compacto e versátil para música, jogos e uso no dia a dia.",
-  },
-  {
-    id: 4,
-    name: "Mousepad Gamer 70x30",
-    category: "Periféricos",
-    subcategory: "Mousepads",
-    price: "R$ 34,90",
-    status: "Disponível",
-    slug: "mousepad-gamer-70x30",
-    description:
-      "Mousepad gamer 70x30 cm com amplo espaço para mouse e teclado.",
-  },
-  {
-    id: 5,
-    name: "Kit 5 Fans Acegeek 120mm",
-    category: "Hardware",
-    subcategory: "Fans",
-    price: "R$ 45,00",
-    status: "Últimas unidades",
-    slug: "kit-5-fans-acegeek-120mm",
-    badge: "OFERTA",
-    description:
-      "Kit com 5 fans Acegeek de 120 mm para melhorar a refrigeração e o visual do gabinete.",
-  },
-  {
-    id: 6,
-    name: "Air Cooler Revenger G-VR303",
-    category: "Hardware",
-    subcategory: "Coolers",
-    price: "R$ 35,00",
-    status: "Disponível",
-    slug: "air-cooler-revenger-g-vr303",
-    description:
-      "Air Cooler Revenger G-VR303 para refrigeração do processador.",
-  },
-  {
-    id: 7,
-    name: "Gabinete Gamer",
-    category: "Gabinetes",
-    subcategory: "Gabinetes Gamer",
-    price: "R$ 199,90",
-    status: "Disponível",
-    slug: "gabinete-gamer",
-    description:
-      "Gabinete gamer com espaço para montagem de setups modernos.",
-  },
-];
+    case "perifericos":
+      return "Periféricos";
+
+    case "gabinetes":
+      return "Gabinetes";
+
+    case "decoracao":
+    case "setup":
+      return "Decoração para Setup";
+
+    default:
+      return "Todos";
+  }
+};
 
 export default function ProductCatalog() {
+  const searchParams = useSearchParams();
+
   const [selectedCategory, setSelectedCategory] =
     useState<Category>("Todos");
 
   const [search, setSearch] = useState("");
 
+  /*
+   * LÊ BUSCA E CATEGORIA DA URL
+   */
+  useEffect(() => {
+    const urlSearch = searchParams.get("busca");
+    const urlCategory = searchParams.get("categoria");
+
+    if (urlSearch) {
+      setSearch(urlSearch);
+    } else {
+      setSearch("");
+    }
+
+    setSelectedCategory(categoryFromUrl(urlCategory));
+  }, [searchParams]);
+
+  /*
+   * FILTRO DOS PRODUTOS
+   */
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       const categoryMatches =
@@ -178,12 +76,18 @@ export default function ProductCatalog() {
       const searchTerm = search.toLowerCase().trim();
 
       const searchMatches =
+        searchTerm === "" ||
         product.name.toLowerCase().includes(searchTerm) ||
         product.subcategory.toLowerCase().includes(searchTerm) ||
         product.category.toLowerCase().includes(searchTerm) ||
+        product.description
+          ?.toLowerCase()
+          .includes(searchTerm) ||
         Boolean(
           product.variants?.some((variant) =>
-            variant.name.toLowerCase().includes(searchTerm)
+            variant.name
+              .toLowerCase()
+              .includes(searchTerm)
           )
         );
 
@@ -191,19 +95,21 @@ export default function ProductCatalog() {
     });
   }, [selectedCategory, search]);
 
+  /*
+   * AGRUPAMENTO POR SUBCATEGORIA
+   */
   const groupedProducts = useMemo(() => {
-    return filteredProducts.reduce<Record<string, Product[]>>(
-      (groups, product) => {
-        if (!groups[product.subcategory]) {
-          groups[product.subcategory] = [];
-        }
+    return filteredProducts.reduce<
+      Record<string, Product[]>
+    >((groups, product) => {
+      if (!groups[product.subcategory]) {
+        groups[product.subcategory] = [];
+      }
 
-        groups[product.subcategory].push(product);
+      groups[product.subcategory].push(product);
 
-        return groups;
-      },
-      {}
-    );
+      return groups;
+    }, {});
   }, [filteredProducts]);
 
   const categoryLabel = (category: Category) => {
@@ -214,7 +120,81 @@ export default function ProductCatalog() {
     return category;
   };
 
-  const renderProductCard = (product: Product) => (
+  /*
+   * ALTERAR CATEGORIA PELO BOTÃO
+   */
+  const handleCategoryChange = (
+    category: Category
+  ) => {
+    setSelectedCategory(category);
+
+    const params = new URLSearchParams(
+      window.location.search
+    );
+
+    if (category === "Todos") {
+      params.delete("categoria");
+    } else {
+      const categoryMap: Record<
+        Exclude<Category, "Todos">,
+        string
+      > = {
+        Hardware: "hardware",
+        Periféricos: "perifericos",
+        Gabinetes: "gabinetes",
+        "Decoração para Setup": "decoracao",
+      };
+
+      params.set(
+        "categoria",
+        categoryMap[category]
+      );
+    }
+
+    const query = params.toString();
+
+    window.history.replaceState(
+      {},
+      "",
+      `${window.location.pathname}${
+        query ? `?${query}` : ""
+      }#produtos`
+    );
+  };
+
+  /*
+   * ALTERAR BUSCA DO CATÁLOGO
+   */
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+
+    const params = new URLSearchParams(
+      window.location.search
+    );
+
+    if (value.trim()) {
+      params.set("busca", value);
+    } else {
+      params.delete("busca");
+    }
+
+    const query = params.toString();
+
+    window.history.replaceState(
+      {},
+      "",
+      `${window.location.pathname}${
+        query ? `?${query}` : ""
+      }#produtos`
+    );
+  };
+
+  /*
+   * CARD DOS PRODUTOS
+   */
+  const renderProductCard = (
+    product: Product
+  ) => (
     <ProductCard
       key={product.id}
       category={product.subcategory}
@@ -228,7 +208,10 @@ export default function ProductCatalog() {
   );
 
   return (
-    <section className="catalog-section">
+    <section
+      id="produtos"
+      className="catalog-section scroll-mt-[170px] md:scroll-mt-[165px]"
+    >
       <div className="catalog-container">
         <div className="catalog-heading">
           <div>
@@ -245,7 +228,11 @@ export default function ProductCatalog() {
             <input
               type="text"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) =>
+                handleSearchChange(
+                  event.target.value
+                )
+              }
               placeholder="Busque por produto..."
               aria-label="Buscar produto"
             />
@@ -259,9 +246,13 @@ export default function ProductCatalog() {
                 key={category}
                 type="button"
                 className={
-                  selectedCategory === category ? "active" : ""
+                  selectedCategory === category
+                    ? "active"
+                    : ""
                 }
-                onClick={() => setSelectedCategory(category)}
+                onClick={() =>
+                  handleCategoryChange(category)
+                }
               >
                 {categoryLabel(category)}
               </button>
@@ -273,26 +264,35 @@ export default function ProductCatalog() {
 
         {filteredProducts.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="text-lg font-bold text-white">
+            <p className="text-lg font-bold text-[var(--tl-text)]">
               Nenhum produto encontrado
             </p>
 
-            <p className="mt-2 text-sm text-zinc-500">
-              Tente outra categoria ou outro termo de busca.
+            <p className="mt-2 text-sm text-[var(--tl-text-muted)]">
+              Tente outra categoria ou outro termo de
+              busca.
             </p>
           </div>
         ) : selectedCategory === "Todos" ? (
           <div className="catalog-products-grid">
-            {filteredProducts.map(renderProductCard)}
+            {filteredProducts.map(
+              renderProductCard
+            )}
           </div>
         ) : (
           <div className="catalog-groups">
             {Object.entries(groupedProducts).map(
               ([subcategory, items]) => (
-                <div className="catalog-group" key={subcategory}>
+                <div
+                  className="catalog-group"
+                  key={subcategory}
+                >
                   <div className="catalog-group-heading">
                     <div>
-                      <span>{selectedCategory}</span>
+                      <span>
+                        {selectedCategory}
+                      </span>
+
                       <h3>{subcategory}</h3>
                     </div>
 
@@ -305,7 +305,9 @@ export default function ProductCatalog() {
                   </div>
 
                   <div className="catalog-products-grid">
-                    {items.map(renderProductCard)}
+                    {items.map(
+                      renderProductCard
+                    )}
                   </div>
                 </div>
               )

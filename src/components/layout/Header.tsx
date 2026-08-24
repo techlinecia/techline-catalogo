@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useCart } from "@/context/CartContext";
+import { products } from "@/data/products";
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [isLightMode, setIsLightMode] = useState(true);
   const [checkoutStep, setCheckoutStep] = useState<"cart" | "checkout">("cart");
+  const [activeSection, setActiveSection] = useState("inicio");
+  const [searchFocused, setSearchFocused] = useState(false);
 
   const {
     items,
@@ -45,6 +48,39 @@ export default function Header() {
       setCheckoutStep("cart");
     }
   }, [isCartOpen]);
+
+  useEffect(() => {
+    const sectionIds = ["produtos", "ofertas", "servicos", "contato"];
+
+    const updateActiveSection = () => {
+      const marker = 190;
+      let current = "inicio";
+
+      for (const id of sectionIds) {
+        const element = document.getElementById(id);
+        if (!element) continue;
+
+        if (element.getBoundingClientRect().top <= marker) {
+          current = id;
+        }
+      }
+
+      if (window.scrollY < 220) {
+        current = "inicio";
+      }
+
+      setActiveSection(current);
+    };
+
+    updateActiveSection();
+    window.addEventListener("scroll", updateActiveSection, { passive: true });
+    window.addEventListener("resize", updateActiveSection);
+
+    return () => {
+      window.removeEventListener("scroll", updateActiveSection);
+      window.removeEventListener("resize", updateActiveSection);
+    };
+  }, []);
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -141,12 +177,87 @@ export default function Header() {
   const navSurface = isLightMode ? "bg-[#f7f8fa]" : "bg-[#080d12]";
 
   const navigation = [
-    { label: "Início", href: "/" },
-    { label: "Produtos", href: "/#produtos" },
-    { label: "Ofertas", href: "/#ofertas" },
-    { label: "Serviços", href: "/#servicos" },
-    { label: "Contato", href: "/#contato" },
+    { label: "Início", href: "/#inicio", id: "inicio" },
+    { label: "Produtos", href: "/#produtos", id: "produtos" },
+    { label: "Ofertas", href: "/#ofertas", id: "ofertas" },
+    { label: "Serviços", href: "/#servicos", id: "servicos" },
+    { label: "Contato", href: "/#contato", id: "contato" },
   ];
+
+  const normalizedSearch = search.trim().toLowerCase();
+
+  const searchResults = useMemo(() => {
+    if (!normalizedSearch) return [];
+
+    return products
+      .filter((product) => {
+        const searchableText = [
+          product.name,
+          product.category,
+          product.subcategory,
+          product.description ?? "",
+          ...(product.variants?.map((variant) => variant.name) ?? []),
+        ]
+          .join(" ")
+          .toLowerCase();
+
+        return searchableText.includes(normalizedSearch);
+      })
+      .slice(0, 6);
+  }, [normalizedSearch]);
+
+  const categoryResults = useMemo(() => {
+    if (!normalizedSearch) return [];
+
+    const baseCategories = [
+      { label: "Hardware", value: "hardware" },
+      { label: "Periféricos", value: "perifericos" },
+      { label: "Gabinetes", value: "gabinetes" },
+      { label: "Decoração para Setup", value: "decoracao" },
+    ];
+
+    const direct = baseCategories.filter((category) =>
+      category.label.toLowerCase().includes(normalizedSearch)
+    );
+
+    const subcategories = products
+      .filter((product) =>
+        product.subcategory.toLowerCase().includes(normalizedSearch)
+      )
+      .map((product) => ({
+        label: product.subcategory,
+        value:
+          product.category === "Hardware"
+            ? "hardware"
+            : product.category === "Periféricos"
+              ? "perifericos"
+              : product.category === "Gabinetes"
+                ? "gabinetes"
+                : "decoracao",
+      }));
+
+    return [...direct, ...subcategories]
+      .filter(
+        (item, index, array) =>
+          array.findIndex((candidate) => candidate.label === item.label) === index
+      )
+      .slice(0, 4);
+  }, [normalizedSearch]);
+
+  const showSearchDropdown =
+    searchFocused &&
+    normalizedSearch.length > 0 &&
+    (searchResults.length > 0 || categoryResults.length > 0);
+
+  const goToProduct = (slug: string) => {
+    setSearchFocused(false);
+    window.location.href = `/produto/${slug}`;
+  };
+
+  const goToCategory = (category: string) => {
+    setSearchFocused(false);
+    window.location.href = `/?categoria=${category}#produtos`;
+  };
 
   const openMenuFromCart = () => {
     closeCart();
@@ -238,7 +349,7 @@ export default function Header() {
             {/* BUSCA DESKTOP */}
             <form
               onSubmit={handleSearch}
-              className="hidden min-w-0 md:flex"
+              className="relative hidden min-w-0 md:flex"
             >
               <div
                 className={`flex h-[52px] min-w-0 flex-1 items-center border ${border} ${softSurface}`}
@@ -249,6 +360,8 @@ export default function Header() {
                   type="search"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setTimeout(() => setSearchFocused(false), 180)}
                   placeholder="Buscar produtos..."
                   className={`h-full min-w-0 flex-1 bg-transparent px-4 text-sm outline-none ${primaryText} placeholder:text-zinc-600`}
                 />
@@ -261,6 +374,76 @@ export default function Header() {
                   ⌕
                 </button>
               </div>
+
+              {showSearchDropdown && (
+                <div className={`absolute left-0 right-0 top-[58px] z-[70] overflow-hidden border ${border} ${surface} shadow-2xl`}>
+                  <div className={`border-b ${border} px-4 py-3 text-xs ${secondaryText}`}>
+                    Buscar por: <strong className={primaryText}>{search.trim()}</strong>
+                  </div>
+
+                  {categoryResults.length > 0 && (
+                    <div className={`border-b ${border}`}>
+                      <p className={`px-4 pb-2 pt-3 text-[10px] font-black uppercase tracking-[0.16em] ${secondaryText}`}>
+                        Categorias
+                      </p>
+
+                      {categoryResults.map((category) => (
+                        <button
+                          key={`${category.label}-${category.value}`}
+                          type="button"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => goToCategory(category.value)}
+                          className={`flex w-full items-center justify-between px-4 py-2 text-left text-sm font-bold transition hover:bg-cyan-400/10 hover:text-cyan-400 ${primaryText}`}
+                        >
+                          <span>{category.label}</span>
+                          <span className="text-cyan-400">→</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {searchResults.length > 0 && (
+                    <div>
+                      <p className={`px-4 pb-2 pt-3 text-[10px] font-black uppercase tracking-[0.16em] ${secondaryText}`}>
+                        Produtos
+                      </p>
+
+                      {searchResults.map((product) => (
+                        <button
+                          key={product.id}
+                          type="button"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => goToProduct(product.slug)}
+                          className={`flex w-full items-center gap-3 border-t ${border} px-4 py-3 text-left transition hover:bg-cyan-400/10`}
+                        >
+                          <div className={`h-12 w-12 shrink-0 overflow-hidden border ${border} ${softSurface}`}>
+                            {product.image ? (
+                              <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+                            ) : (
+                              <div className={`flex h-full items-center justify-center text-[8px] ${secondaryText}`}>
+                                SEM FOTO
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <p className={`truncate text-sm font-black ${primaryText}`}>
+                              {product.name}
+                            </p>
+                            <p className={`mt-1 text-[11px] ${secondaryText}`}>
+                              {product.subcategory} • {product.status}
+                            </p>
+                          </div>
+
+                          <p className="shrink-0 text-sm font-black text-cyan-400">
+                            {product.price}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </form>
 
             {/* AÇÕES */}
@@ -311,31 +494,94 @@ export default function Header() {
           </div>
 
           {/* BUSCA MOBILE */}
-          <form
-            onSubmit={handleSearch}
-            className="pb-4 md:hidden"
-          >
-            <div
-              className={`flex h-[52px] items-center border ${border} ${softSurface}`}
-            >
+          <form onSubmit={handleSearch} className="relative pb-4 md:hidden">
+            <div className={`flex h-[52px] items-center border ${border} ${softSurface}`}>
               <span className={`pl-4 text-xl ${secondaryText}`}>⌕</span>
 
               <input
                 type="search"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setTimeout(() => setSearchFocused(false), 180)}
                 placeholder="Buscar produtos..."
                 className={`h-full min-w-0 flex-1 bg-transparent px-3 text-sm outline-none ${primaryText} placeholder:text-zinc-600`}
               />
 
-              <button
-                type="submit"
-                className="flex h-full w-14 shrink-0 items-center justify-center bg-cyan-400 text-xl font-black text-black"
-                aria-label="Buscar"
-              >
+              <button type="submit" className="flex h-full w-14 shrink-0 items-center justify-center bg-cyan-400 text-xl font-black text-black" aria-label="Buscar">
                 ⌕
               </button>
             </div>
+
+            {showSearchDropdown && (
+              <div className={`absolute left-0 right-0 top-[58px] z-[70] max-h-[62vh] overflow-y-auto border ${border} ${surface} shadow-2xl`}>
+                <div className={`border-b ${border} px-4 py-3 text-xs ${secondaryText}`}>
+                  Buscar por: <strong className={primaryText}>{search.trim()}</strong>
+                </div>
+
+                {categoryResults.length > 0 && (
+                  <div className={`border-b ${border}`}>
+                    <p className={`px-4 pb-2 pt-3 text-[10px] font-black uppercase tracking-[0.16em] ${secondaryText}`}>
+                      Categorias
+                    </p>
+
+                    {categoryResults.map((category) => (
+                      <button
+                        key={`mobile-${category.label}-${category.value}`}
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => goToCategory(category.value)}
+                        className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm font-bold ${primaryText}`}
+                      >
+                        <span>{category.label}</span>
+                        <span className="text-cyan-400">→</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {searchResults.length > 0 && (
+                  <div>
+                    <p className={`px-4 pb-2 pt-3 text-[10px] font-black uppercase tracking-[0.16em] ${secondaryText}`}>
+                      Produtos
+                    </p>
+
+                    {searchResults.map((product) => (
+                      <button
+                        key={`mobile-${product.id}`}
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => goToProduct(product.slug)}
+                        className={`flex w-full items-center gap-3 border-t ${border} px-4 py-3 text-left`}
+                      >
+                        <div className={`h-12 w-12 shrink-0 overflow-hidden border ${border} ${softSurface}`}>
+                          {product.image ? (
+                            <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className={`flex h-full items-center justify-center text-[8px] ${secondaryText}`}>
+                              SEM FOTO
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <p className={`truncate text-sm font-black ${primaryText}`}>
+                            {product.name}
+                          </p>
+                          <p className={`mt-1 text-[11px] ${secondaryText}`}>
+                            {product.subcategory} • {product.status}
+                          </p>
+                        </div>
+
+                        <p className="shrink-0 text-sm font-black text-cyan-400">
+                          {product.price}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </form>
         </div>
 
@@ -344,19 +590,31 @@ export default function Header() {
           className={`hidden border-t ${border} ${navSurface} shadow-[0_3px_0_rgba(34,211,238,0.75)] md:block`}
         >
           <div className="mx-auto grid max-w-7xl grid-cols-5 px-6">
-            {navigation.map((item, index) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={`flex min-h-[62px] items-center justify-center border-r ${border} px-4 text-center text-sm font-black uppercase tracking-wide transition hover:bg-cyan-400/10 hover:text-cyan-400 ${
-                  index === 0
-                    ? "border-l border-cyan-400/70 text-cyan-400"
-                    : primaryText
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {navigation.map((item, index) => {
+              const isActive = activeSection === item.id;
+
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={`relative flex min-h-[62px] items-center justify-center border-r ${border} px-4 text-center text-sm font-black uppercase tracking-wide transition hover:bg-cyan-400/10 hover:text-cyan-400 ${
+                    index === 0 ? "border-l" : ""
+                  } ${
+                    isActive
+                      ? "bg-cyan-400/5 text-cyan-400"
+                      : primaryText
+                  }`}
+                >
+                  {item.label}
+
+                  <span
+                    className={`absolute bottom-0 left-0 right-0 h-[2px] bg-cyan-400 transition-opacity ${
+                      isActive ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
+                </Link>
+              );
+            })}
           </div>
         </nav>
       </header>
@@ -410,17 +668,23 @@ export default function Header() {
           </div>
 
           <div className="px-5 py-5">
-            {navigation.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                onClick={() => setMenuOpen(false)}
-                className={`flex items-center justify-between border-b ${border} py-4 text-sm font-bold ${primaryText}`}
-              >
-                <span>{item.label}</span>
-                <span className="text-cyan-400">→</span>
-              </Link>
-            ))}
+            {navigation.map((item) => {
+              const isActive = activeSection === item.id;
+
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setMenuOpen(false)}
+                  className={`flex items-center justify-between border-b ${border} py-4 text-sm font-bold ${
+                    isActive ? "text-cyan-400" : primaryText
+                  }`}
+                >
+                  <span>{item.label}</span>
+                  <span className="text-cyan-400">{isActive ? "•" : "→"}</span>
+                </Link>
+              );
+            })}
           </div>
         </aside>
       </div>

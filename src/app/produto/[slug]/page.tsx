@@ -59,7 +59,13 @@ export default function ProductPage({
         status: product.status,
         image: product.image,
         badge: product.badge,
+
         description: product.description,
+
+        condition: product.condition,
+        conditionNote: product.conditionNote,
+        stock: product.stock,
+
         variants: product.variants,
         highlights: product.highlights,
         specifications: product.specifications,
