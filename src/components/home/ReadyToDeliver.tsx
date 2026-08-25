@@ -50,8 +50,9 @@ export default function ReadyToDeliver() {
               price={product.price}
               status={product.status}
               slug={product.slug}
-              badge={product.badge}
               image={product.image}
+              offerActive={product.offer?.active}
+              offerPrice={product.offer?.price}
             />
           ))}
         </div>
