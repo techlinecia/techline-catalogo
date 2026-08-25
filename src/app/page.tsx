@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import Header from "@/components/layout/Header";
 import Hero from "@/components/home/Hero";
 import Categories from "@/components/home/Categories";
-import ReadyToDeliver from "@/components/home/ReadyToDeliver";
+import WeeklyOffers from "@/components/home/WeeklyOffers";
 import ProductCatalog from "@/components/home/ProductCatalog";
 
 export default function Home() {
@@ -14,7 +14,7 @@ export default function Home() {
       <main>
         <Hero />
         <Categories />
-        <ReadyToDeliver />
+        <WeeklyOffers />
 
         <Suspense
           fallback={

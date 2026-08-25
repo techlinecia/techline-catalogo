@@ -1,5 +1,6 @@
 export type Category =
   | "Hardware"
+  | "Refrigeração"
   | "Periféricos"
   | "Gabinetes"
   | "Decoração para Setup";
@@ -18,18 +19,29 @@ export type ProductSpecification = {
 
 export type ProductCondition = "Novo" | "Usado";
 
+export type ProductOffer = {
+  active: boolean;
+  price: string;
+};
+
 export type Product = {
   id: number;
   name: string;
   category: Category;
   subcategory: string;
+
+  // Preço normal do produto
   price: string;
+
+  // Oferta temporária
+  offer?: ProductOffer;
+
   status: string;
   slug: string;
 
-  badge?: string;
   description?: string;
   image?: string;
+  images?: string[];
 
   condition?: ProductCondition;
   conditionNote?: string;
@@ -41,10 +53,9 @@ export type Product = {
 };
 
 const rs7WhiteImages = [
-  "/produtos/Rs7 branco.jpg",
-  "/produtos/rs7 branco2.jpg",
-  "/produtos/rs7 branco3.jpg",
-  "/produtos/rs7 branco4.jpg",
+  "/produtos/smailwolf-rs7/branco-1.jpg",
+  "/produtos/smailwolf-rs7/branco-2.jpg",
+  "/produtos/smailwolf-rs7/branco-3.jpg",
 ];
 
 export const products: Product[] = [
@@ -53,11 +64,15 @@ export const products: Product[] = [
     name: "Mouse Gamer Smailwolf RS7",
     category: "Periféricos",
     subcategory: "Mouses",
-    price: "R$ 84,90",
+    price: "R$ 109,90",
+    offer: {
+      active: true,
+      price: "R$ 99,90",
+    },
     status: "Pronta entrega",
     slug: "smailwolf-rs7",
-    badge: "DESTAQUE",
-    image: "/produtos/Rs7 branco.jpg",
+    image: "/produtos/smailwolf-rs7/branco-1.jpg",
+    images: rs7WhiteImages,
 
     condition: "Novo",
     stock: 1,
@@ -119,9 +134,15 @@ export const products: Product[] = [
     name: "Mouse TGT OM85 Preto",
     category: "Periféricos",
     subcategory: "Mouses",
-    price: "R$ 19,90",
+    price: "R$ 39,90",
     status: "Pronta entrega",
     slug: "mouse-tgt-om85",
+    image: "/produtos/tgt-om85/om85-1.jpg",
+    images: [
+      "/produtos/tgt-om85/om85-1.jpg",
+      "/produtos/tgt-om85/om85-2.jpg",
+      "/produtos/tgt-om85/om85-3.jpg",
+    ],
 
     condition: "Novo",
     stock: 3,
@@ -161,10 +182,19 @@ export const products: Product[] = [
     name: "Fone de Ouvido QKZ AK6 Purple",
     category: "Periféricos",
     subcategory: "Fones",
-    price: "R$ 39,90",
+    price: "R$ 49,90",
+    offer: {
+      active: true,
+      price: "R$ 44,90",
+    },
     status: "Pronta entrega",
     slug: "fone-qkz-ak6",
-    badge: "MAIS PROCURADO",
+    image: "/produtos/qkz-ak6/ak6-1.jpg",
+    images: [
+      "/produtos/qkz-ak6/ak6-1.jpg",
+      "/produtos/qkz-ak6/ak6-2.jpg",
+      "/produtos/qkz-ak6/ak6-3.jpg",
+    ],
 
     condition: "Novo",
     stock: 5,
@@ -204,9 +234,15 @@ export const products: Product[] = [
     name: "Mousepad Gamer BAYAZ Speed 70x30cm",
     category: "Periféricos",
     subcategory: "Mousepads",
-    price: "R$ 34,90",
+    price: "R$ 44,90",
     status: "Pronta entrega",
     slug: "mousepad-gamer-70x30",
+    image: "/produtos/bayaz-70x30/bayaz-1.jpg",
+    images: [
+      "/produtos/bayaz-70x30/bayaz-1.jpg",
+      "/produtos/bayaz-70x30/bayaz-2.jpg",
+      "/produtos/bayaz-70x30/bayaz-3.jpg",
+    ],
 
     condition: "Novo",
     stock: 2,
@@ -244,12 +280,21 @@ export const products: Product[] = [
   {
     id: 5,
     name: "Kit com 5 Fans Acegeek",
-    category: "Hardware",
+    category: "Refrigeração",
     subcategory: "Fans",
-    price: "R$ 45,00",
+    price: "R$ 64,90",
+    offer: {
+      active: true,
+      price: "R$ 59,90",
+    },
     status: "Últimas unidades",
     slug: "kit-5-fans-acegeek-120mm",
-    badge: "OFERTA",
+    image: "/produtos/fans/fans-0.png",
+    images: [
+      "/produtos/fans/fans-0.png",
+      "/produtos/fans/fans-1.png",
+      "/produtos/fans/fans-2.png",
+    ],
 
     condition: "Novo",
     stock: 2,
@@ -279,11 +324,17 @@ export const products: Product[] = [
   {
     id: 6,
     name: "Air Cooler Revenger G-V303",
-    category: "Hardware",
+    category: "Refrigeração",
     subcategory: "Coolers",
-    price: "R$ 35,00",
+    price: "R$ 54,90",
     status: "Pronta entrega",
     slug: "air-cooler-revenger-g-v303",
+    image: "/produtos/revenger-g-v303/revenger-1.jpg",
+    images: [
+      "/produtos/revenger-g-v303/revenger-1.jpg",
+      "/produtos/revenger-g-v303/revenger-2.jpg",
+      "/produtos/revenger-g-v303/revenger-3.jpg",
+    ],
 
     condition: "Novo",
     stock: 1,
@@ -318,9 +369,15 @@ export const products: Product[] = [
     name: "Gabinete Gamer Mymax Lion Rosa",
     category: "Gabinetes",
     subcategory: "Gabinetes Gamer",
-    price: "R$ 199,90",
+    price: "R$ 119,90",
     status: "Pronta entrega",
     slug: "gabinete-gamer-mymax-lion",
+    image: "/produtos/gabinete-rosa/rosa-1.png",
+    images: [
+      "/produtos/gabinete-rosa/rosa-1.png",
+      "/produtos/gabinete-rosa/rosa-2.png",
+      "/produtos/gabinete-rosa/rosa-3.png",
+    ],
 
     condition: "Novo",
     stock: 1,
@@ -360,9 +417,15 @@ export const products: Product[] = [
     name: "USADO - Mouse Gamer EWEADN GS01 Preto",
     category: "Periféricos",
     subcategory: "Mouses",
-    price: "R$ 0,00",
+    price: "R$ 84,90",
     status: "Pronta entrega",
     slug: "mouse-eweadn-gs01",
+    image: "/produtos/eweadn-gs01/gs01-1.jpg",
+    images: [
+      "/produtos/eweadn-gs01/gs01-1.jpg",
+      "/produtos/eweadn-gs01/gs01-2.jpg",
+      "/produtos/eweadn-gs01/gs01-3.jpg",
+    ],
 
     condition: "Usado",
     conditionNote:
@@ -407,6 +470,12 @@ export const products: Product[] = [
     price: "R$ 29,90",
     status: "Pronta entrega",
     slug: "mouse-tgt-gm95",
+    image: "/produtos/tgt-gm95/gm95-1.jpg",
+    images: [
+      "/produtos/tgt-gm95/gm95-1.jpg",
+      "/produtos/tgt-gm95/gm95-2.jpg",
+      "/produtos/tgt-gm95/gm95-3.jpg",
+    ],
 
     condition: "Novo",
     stock: 2,
@@ -443,11 +512,17 @@ export const products: Product[] = [
   {
     id: 10,
     name: "Air Cooler Mancer Hazel 120mm",
-    category: "Hardware",
+    category: "Refrigeração",
     subcategory: "Coolers",
-    price: "R$ 0,00",
+    price: "R$ 44,90",
     status: "Pronta entrega",
     slug: "air-cooler-mancer-hazel-120mm",
+    image: "/produtos/hazel/mancer-1.jpg",
+    images: [
+      "/produtos/hazel/mancer-1.jpg",
+      "/produtos/hazel/mancer-2.jpg",
+      "/produtos/hazel/mancer-3.jpg",
+    ],
 
     condition: "Novo",
     stock: 3,
@@ -486,9 +561,15 @@ export const products: Product[] = [
     name: "USADA - Placa de Vídeo NVIDIA GeForce GTX 650 1GB",
     category: "Hardware",
     subcategory: "Placas de Vídeo",
-    price: "R$ 0,00",
+    price: "R$ 149,90",
     status: "Pronta entrega",
     slug: "gtx-650-1gb",
+    image: "/produtos/gtx-650/gtx-1.jpg",
+    images: [
+      "/produtos/gtx-650/gtx-1.jpg",
+      "/produtos/gtx-650/gtx-2.jpg",
+      "/produtos/gtx-650/gtx-3.jpg",
+    ],
 
     condition: "Usado",
     conditionNote:
@@ -524,6 +605,38 @@ export const products: Product[] = [
       },
     ],
   },
+  {
+    id: 12,
+    name: "Pasta Térmica Husky Glaze 5g",
+    category: "Refrigeração",
+    subcategory: "Pastas Térmicas",
+    price: "R$ 24,90",
+    status: "Pronta entrega",
+    slug: "pasta-termica-husky-glaze-5g",
+    image: "/produtos/husky-glaze-5g/husky-1.jpg",
+    images: [
+      "/produtos/husky-glaze-5g/husky-1.jpg",
+      "/produtos/husky-glaze-5g/husky-2.jpg",
+      "/produtos/husky-glaze-5g/husky-3.jpg",
+    ],
+    condition: "Novo",
+    stock: 3,
+    description:
+      "Pasta térmica Husky Glaze de 5g para auxiliar na transferência de calor entre o processador e o cooler.",
+    highlights: [
+      "Conteúdo de 5g",
+      "Indicada para processadores",
+      "Auxilia na transferência de calor",
+      "Pronta entrega",
+    ],
+    specifications: [
+      { label: "Marca", value: "Husky" },
+      { label: "Modelo", value: "Glaze" },
+      { label: "Conteúdo", value: "5g" },
+      { label: "Tipo", value: "Pasta térmica" },
+    ],
+  },
+
 ];
 
 /*

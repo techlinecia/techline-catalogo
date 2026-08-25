@@ -55,10 +55,14 @@ export default function ProductPage({
         slug: product.slug,
         name: product.name,
         category: product.subcategory,
+
         price: product.price,
+        offer: product.offer,
+
         status: product.status,
+
         image: product.image,
-        badge: product.badge,
+        images: product.images,
 
         description: product.description,
 

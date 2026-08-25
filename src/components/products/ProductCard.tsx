@@ -8,8 +8,10 @@ type ProductCardProps = {
   price: string;
   status: string;
   slug: string;
-  badge?: string;
   image?: string;
+
+  offerActive?: boolean;
+  offerPrice?: string;
 };
 
 export default function ProductCard({
@@ -18,14 +20,19 @@ export default function ProductCard({
   price,
   status,
   slug,
-  badge,
   image,
+  offerActive = false,
+  offerPrice,
 }: ProductCardProps) {
   const router = useRouter();
 
   const openProduct = () => {
     router.push(`/produto/${slug}`);
   };
+
+  const hasOffer =
+    offerActive &&
+    Boolean(offerPrice);
 
   return (
     <button
@@ -58,33 +65,6 @@ export default function ProductCard({
           md:h-[210px]
         "
       >
-        {badge && (
-          <span
-            className="
-              absolute
-              left-2
-              top-2
-              z-10
-              max-w-[85%]
-              bg-cyan-400
-              px-2
-              py-1
-              text-[7px]
-              font-black
-              uppercase
-              tracking-wide
-              text-black
-              sm:text-[8px]
-              md:left-3
-              md:top-3
-              md:px-2.5
-              md:text-[9px]
-            "
-          >
-            {badge}
-          </span>
-        )}
-
         {image ? (
           <img
             src={image}
@@ -159,9 +139,23 @@ export default function ProductCard({
         </div>
 
         <div className="mt-3 flex items-end justify-between gap-2 md:mt-4">
-          <p className="whitespace-nowrap text-base font-black text-white sm:text-lg md:text-xl">
-            {price}
-          </p>
+          <div className="min-w-0">
+            {hasOffer ? (
+              <>
+                <p className="text-[10px] text-zinc-500 line-through sm:text-xs">
+                  {price}
+                </p>
+
+                <p className="whitespace-nowrap text-base font-black text-cyan-400 sm:text-lg md:text-xl">
+                  {offerPrice}
+                </p>
+              </>
+            ) : (
+              <p className="whitespace-nowrap text-base font-black text-white sm:text-lg md:text-xl">
+                {price}
+              </p>
+            )}
+          </div>
 
           <span
             className="

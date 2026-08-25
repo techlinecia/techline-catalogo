@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/context/CartContext";
+import { useTheme } from "@/context/ThemeContext";
 
 type ProductVariant = {
   name: string;
@@ -25,10 +26,14 @@ type ProductModalProps = {
     name: string;
     category: string;
     price: string;
+    offer?: {
+      active: boolean;
+      price: string;
+    };
     image?: string;
+    images?: string[];
     status: string;
     description?: string;
-    badge?: string;
     condition?: "Novo" | "Usado";
     conditionNote?: string;
     stock?: number;
@@ -46,7 +51,6 @@ export default function ProductModal({
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [isLightMode, setIsLightMode] = useState(false);
   const [search, setSearch] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -63,6 +67,8 @@ export default function ProductModal({
     openCart,
     closeCart,
   } = useCart();
+
+  const { isLightMode, toggleTheme } = useTheme();
 
   useEffect(() => {
     if (open) {
@@ -85,8 +91,16 @@ export default function ProductModal({
       return selectedVariant.images;
     }
 
+    if (product?.images?.length) {
+      return product.images;
+    }
+
+    if (product?.image) {
+      return [product.image];
+    }
+
     return [];
-  }, [selectedVariant]);
+  }, [selectedVariant, product]);
 
   if (!open || !product) return null;
 
@@ -133,11 +147,19 @@ export default function ProductModal({
   const conditionText =
     product.condition === "Usado" ? " (produto usado)" : "";
 
+  const hasOffer =
+    product.offer?.active &&
+    Boolean(product.offer?.price);
+
+  const currentPrice = hasOffer
+    ? product.offer!.price
+    : product.price;
+
   const whatsappMessage = encodeURIComponent(
     [
       `Olá! Vim pelo catálogo da TECH LINE e tenho interesse em ${quantity} ${
         quantity === 1 ? "unidade" : "unidades"
-      } do ${product.name}${variantText}${conditionText}, por ${product.price} cada.`,
+      } do ${product.name}${variantText}${conditionText}, por ${currentPrice} cada.`,
       product.condition === "Usado" && product.conditionNote
         ? `Observação do anúncio: ${product.conditionNote}`
         : "",
@@ -148,7 +170,7 @@ export default function ProductModal({
   );
 
   const productPriceNumber = Number(
-    product.price
+    currentPrice
       .replace(/[^\d,.-]/g, "")
       .replace(/\./g, "")
       .replace(",", ".")
@@ -270,7 +292,7 @@ export default function ProductModal({
 
                 <button
                   type="button"
-                  onClick={() => setIsLightMode((current) => !current)}
+                  onClick={toggleTheme}
                   className={`relative flex h-11 w-[58px] items-center rounded-full border ${border} ${
                     isLightMode ? "bg-zinc-200" : "bg-[#0c1216]"
                   } p-1 transition`}
@@ -363,8 +385,8 @@ export default function ProductModal({
             <nav className="px-5 py-6">
               {[
                 { label: "Início", href: "/" },
-                { label: "Produtos", href: "/#produtos" },
                 { label: "Ofertas", href: "/#ofertas" },
+                { label: "Produtos", href: "/#produtos" },
                 { label: "Serviços", href: "/#servicos" },
                 { label: "Contato", href: "/#contato" },
               ].map((item) => (
@@ -591,11 +613,6 @@ export default function ProductModal({
                   isLightMode ? "bg-white" : "bg-[#0b1013]"
                 } md:min-h-[480px] lg:min-h-[520px]`}
               >
-                {product.badge && (
-                  <span className="absolute left-4 top-4 z-20 bg-cyan-400 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-black">
-                    {product.badge}
-                  </span>
-                )}
 
                 {currentImages.length > 0 ? (
                   <img
@@ -739,9 +756,29 @@ export default function ProductModal({
                 )}
               </div>
 
-              <p className="mt-7 text-4xl font-black text-cyan-400">
-                {product.price}
-              </p>
+              <div className="mt-7">
+                {hasOffer ? (
+                  <>
+                    <div className="mb-2 flex items-center gap-3">
+                      <span className="bg-cyan-400 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-black">
+                        OFERTA
+                      </span>
+
+                      <span className={`text-sm line-through ${secondaryText}`}>
+                        {product.price}
+                      </span>
+                    </div>
+
+                    <p className="text-4xl font-black text-cyan-400">
+                      {currentPrice}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-4xl font-black text-cyan-400">
+                    {product.price}
+                  </p>
+                )}
+              </div>
 
               {/* INFORMAÇÕES RÁPIDAS */}
               <div className="mt-7 grid grid-cols-2 gap-3">

@@ -8,6 +8,7 @@ import { products, type Product } from "@/data/products";
 type Category =
   | "Todos"
   | "Hardware"
+  | "Refrigeração"
   | "Periféricos"
   | "Gabinetes"
   | "Decoração para Setup";
@@ -15,6 +16,7 @@ type Category =
 const categories: Category[] = [
   "Todos",
   "Hardware",
+  "Refrigeração",
   "Periféricos",
   "Gabinetes",
   "Decoração para Setup",
@@ -24,6 +26,9 @@ const categoryFromUrl = (value: string | null): Category => {
   switch (value?.toLowerCase()) {
     case "hardware":
       return "Hardware";
+
+    case "refrigeracao":
+      return "Refrigeração";
 
     case "perifericos":
       return "Periféricos";
@@ -48,9 +53,6 @@ export default function ProductCatalog() {
 
   const [search, setSearch] = useState("");
 
-  /*
-   * LÊ BUSCA E CATEGORIA DA URL
-   */
   useEffect(() => {
     const urlSearch = searchParams.get("busca");
     const urlCategory = searchParams.get("categoria");
@@ -64,9 +66,6 @@ export default function ProductCatalog() {
     setSelectedCategory(categoryFromUrl(urlCategory));
   }, [searchParams]);
 
-  /*
-   * FILTRO DOS PRODUTOS
-   */
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       const categoryMatches =
@@ -95,9 +94,6 @@ export default function ProductCatalog() {
     });
   }, [selectedCategory, search]);
 
-  /*
-   * AGRUPAMENTO POR SUBCATEGORIA
-   */
   const groupedProducts = useMemo(() => {
     return filteredProducts.reduce<
       Record<string, Product[]>
@@ -120,9 +116,6 @@ export default function ProductCatalog() {
     return category;
   };
 
-  /*
-   * ALTERAR CATEGORIA PELO BOTÃO
-   */
   const handleCategoryChange = (
     category: Category
   ) => {
@@ -140,6 +133,7 @@ export default function ProductCatalog() {
         string
       > = {
         Hardware: "hardware",
+        Refrigeração: "refrigeracao",
         Periféricos: "perifericos",
         Gabinetes: "gabinetes",
         "Decoração para Setup": "decoracao",
@@ -162,9 +156,6 @@ export default function ProductCatalog() {
     );
   };
 
-  /*
-   * ALTERAR BUSCA DO CATÁLOGO
-   */
   const handleSearchChange = (value: string) => {
     setSearch(value);
 
@@ -189,9 +180,6 @@ export default function ProductCatalog() {
     );
   };
 
-  /*
-   * CARD DOS PRODUTOS
-   */
   const renderProductCard = (
     product: Product
   ) => (
@@ -202,8 +190,9 @@ export default function ProductCatalog() {
       price={product.price}
       status={product.status}
       slug={product.slug}
-      badge={product.badge}
       image={product.image}
+      offerActive={product.offer?.active}
+      offerPrice={product.offer?.price}
     />
   );
 

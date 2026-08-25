@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useCart } from "@/context/CartContext";
+import { useTheme } from "@/context/ThemeContext";
 import { products } from "@/data/products";
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [isLightMode, setIsLightMode] = useState(true);
   const [checkoutStep, setCheckoutStep] = useState<"cart" | "checkout">("cart");
   const [activeSection, setActiveSection] = useState("inicio");
   const [searchFocused, setSearchFocused] = useState(false);
@@ -31,17 +31,7 @@ export default function Header() {
     updateCheckoutField,
   } = useCart();
 
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", "light");
-    setIsLightMode(true);
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.setAttribute(
-      "data-theme",
-      isLightMode ? "light" : "dark"
-    );
-  }, [isLightMode]);
+  const { isLightMode, toggleTheme } = useTheme();
 
   useEffect(() => {
     if (!isCartOpen) {
@@ -50,7 +40,7 @@ export default function Header() {
   }, [isCartOpen]);
 
   useEffect(() => {
-    const sectionIds = ["produtos", "ofertas", "servicos", "contato"];
+    const sectionIds = ["ofertas", "produtos", "servicos", "contato"];
 
     const updateActiveSection = () => {
       const marker = 190;
@@ -178,11 +168,11 @@ export default function Header() {
 
   const navigation = [
     { label: "Início", href: "/#inicio", id: "inicio" },
-    { label: "Produtos", href: "/#produtos", id: "produtos" },
     { label: "Ofertas", href: "/#ofertas", id: "ofertas" },
+    { label: "Produtos", href: "/#produtos", id: "produtos" },
     { label: "Serviços", href: "/#servicos", id: "servicos" },
     { label: "Contato", href: "/#contato", id: "contato" },
-  ];
+];
 
   const normalizedSearch = search.trim().toLowerCase();
 
@@ -450,7 +440,7 @@ export default function Header() {
             <div className="flex items-center justify-self-end gap-2 md:gap-3">
               <button
                 type="button"
-                onClick={() => setIsLightMode((current) => !current)}
+                onClick={toggleTheme}
                 className={`relative flex h-11 w-[58px] items-center rounded-full border ${border} ${
                   isLightMode ? "bg-zinc-200" : "bg-[#0d141a]"
                 } p-1 transition md:w-[64px]`}

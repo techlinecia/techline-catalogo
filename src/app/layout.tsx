@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { CartProvider } from "@/context/CartContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,12 +14,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-/*
- * URL DO SITE
- *
- * Na Vercel pega automaticamente o domínio publicado.
- * Localmente usa localhost:3000.
- */
 const siteUrl =
   process.env.VERCEL_PROJECT_PRODUCTION_URL
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
@@ -47,16 +42,11 @@ export const metadata: Metadata = {
 
   openGraph: {
     title: "Catálogo Tech Line",
-
     description:
       "Hardware, periféricos, acessórios e tecnologia. Confira os produtos disponíveis na Tech Line.",
-
     type: "website",
-
     locale: "pt_BR",
-
     siteName: "Tech Line",
-
     images: [
       {
         url: "/Banner%20futurista%20Techline.png",
@@ -69,15 +59,10 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-
     title: "Catálogo Tech Line",
-
     description:
       "Hardware, periféricos, acessórios e tecnologia. Confira os produtos disponíveis na Tech Line.",
-
-    images: [
-      "/Banner%20futurista%20Techline.png",
-    ],
+    images: ["/Banner%20futurista%20Techline.png"],
   },
 };
 
@@ -92,9 +77,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        <CartProvider>
-          {children}
-        </CartProvider>
+        <ThemeProvider>
+          <CartProvider>{children}</CartProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
