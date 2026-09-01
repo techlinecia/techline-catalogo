@@ -9,9 +9,36 @@ import {
   useState,
 } from "react";
 
+export type CartItemType = "product" | "service";
+
 export type CartItem = {
   cartId: string;
 
+  type: CartItemType;
+
+  slug: string;
+  name: string;
+
+  image?: string;
+
+  price: number;
+
+  /*
+   * PRODUTO
+   */
+  variation?: string;
+  quantity: number;
+  maxStock?: number;
+
+  /*
+   * SERVIÇO
+   */
+  serviceType?: string;
+};
+
+export type AddProductToCartItem = {
+  type?: "product";
+
   slug: string;
   name: string;
 
@@ -22,19 +49,25 @@ export type CartItem = {
   variation?: string;
 
   quantity: number;
-
   maxStock: number;
 };
 
-type AddToCartItem = {
+export type AddServiceToCartItem = {
+  type: "service";
+
   slug: string;
   name: string;
+
   image?: string;
+
   price: number;
-  variation?: string;
-  quantity: number;
-  maxStock: number;
+
+  serviceType?: string;
 };
+
+export type AddToCartItem =
+  | AddProductToCartItem
+  | AddServiceToCartItem;
 
 export type PaymentMethod =
   | "pix"
@@ -42,15 +75,38 @@ export type PaymentMethod =
   | "debito"
   | "credito";
 
-export type DeliveryMethod =
+/*
+ * PRODUTOS
+ *
+ * entrega = entrega grátis
+ * retirada = retirada na TECH LINE
+ */
+export type ProductDeliveryMethod =
   | "retirada"
   | "entrega";
 
+/*
+ * SERVIÇOS
+ *
+ * levar = cliente leva o PC
+ * buscar = TECH LINE busca e devolve
+ */
+export type ServiceDeliveryMethod =
+  | "levar"
+  | "buscar";
+
 export type CheckoutData = {
   paymentMethod: PaymentMethod | null;
+
   installments: number;
 
-  deliveryMethod: DeliveryMethod | null;
+  productDeliveryMethod:
+    | ProductDeliveryMethod
+    | null;
+
+  serviceDeliveryMethod:
+    | ServiceDeliveryMethod
+    | null;
 
   customerName: string;
 
@@ -61,11 +117,39 @@ export type CheckoutData = {
   reference: string;
 };
 
+type CheckoutField =
+  | "customerName"
+  | "street"
+  | "number"
+  | "neighborhood"
+  | "complement"
+  | "reference";
+
 type CartContextType = {
   items: CartItem[];
 
+  productItems: CartItem[];
+  serviceItems: CartItem[];
+
+  hasProducts: boolean;
+  hasServices: boolean;
+
   totalItems: number;
+
+  /*
+   * Soma somente produtos + serviços.
+   */
   totalPrice: number;
+
+  /*
+   * Taxa da busca + devolução.
+   */
+  serviceTransportFee: number;
+
+  /*
+   * Itens + taxa.
+   */
+  finalTotal: number;
 
   isCartOpen: boolean;
 
@@ -95,18 +179,16 @@ type CartContextType = {
     installments: number
   ) => void;
 
-  setDeliveryMethod: (
-    deliveryMethod: DeliveryMethod
+  setProductDeliveryMethod: (
+    method: ProductDeliveryMethod
+  ) => void;
+
+  setServiceDeliveryMethod: (
+    method: ServiceDeliveryMethod
   ) => void;
 
   updateCheckoutField: (
-    field:
-      | "customerName"
-      | "street"
-      | "number"
-      | "neighborhood"
-      | "complement"
-      | "reference",
+    field: CheckoutField,
     value: string
   ) => void;
 
@@ -119,14 +201,26 @@ const CartContext =
   );
 
 const CART_STORAGE_KEY = "techline-cart";
+
 const CHECKOUT_STORAGE_KEY =
   "techline-checkout";
 
+/*
+ * TAXA DO SERVIÇO
+ *
+ * Buscar o computador no endereço
+ * + devolver depois do serviço.
+ */
+const SERVICE_TRANSPORT_FEE = 10;
+
 const defaultCheckout: CheckoutData = {
   paymentMethod: null,
+
   installments: 1,
 
-  deliveryMethod: null,
+  productDeliveryMethod: null,
+
+  serviceDeliveryMethod: null,
 
   customerName: "",
 
@@ -172,7 +266,24 @@ export function CartProvider({
           JSON.parse(savedCart);
 
         if (Array.isArray(parsedCart)) {
-          setItems(parsedCart);
+          /*
+           * Compatibilidade com o carrinho
+           * antigo.
+           *
+           * Produtos antigos não possuem
+           * "type", então viram product.
+           */
+          const normalizedCart =
+            parsedCart.map((item) => ({
+              ...item,
+
+              type:
+                item.type === "service"
+                  ? "service"
+                  : "product",
+            }));
+
+          setItems(normalizedCart);
         }
       }
 
@@ -190,9 +301,26 @@ export function CartProvider({
           typeof parsedCheckout ===
             "object"
         ) {
+          /*
+           * Compatibilidade com o checkout
+           * antigo.
+           */
           setCheckout({
             ...defaultCheckout,
+
             ...parsedCheckout,
+
+            productDeliveryMethod:
+              parsedCheckout
+                .productDeliveryMethod ??
+              parsedCheckout
+                .deliveryMethod ??
+              null,
+
+            serviceDeliveryMethod:
+              parsedCheckout
+                .serviceDeliveryMethod ??
+              null,
           });
         }
       }
@@ -207,7 +335,7 @@ export function CartProvider({
   }, []);
 
   /*
-   * SALVA O CARRINHO
+   * SALVA CARRINHO
    */
   useEffect(() => {
     if (!loaded) return;
@@ -226,7 +354,7 @@ export function CartProvider({
   }, [items, loaded]);
 
   /*
-   * SALVA DADOS DE FINALIZAÇÃO
+   * SALVA CHECKOUT
    */
   useEffect(() => {
     if (!loaded) return;
@@ -245,20 +373,97 @@ export function CartProvider({
   }, [checkout, loaded]);
 
   /*
-   * ADICIONAR PRODUTO
+   * ADICIONAR ITEM
    */
   const addItem = (
     item: AddToCartItem
   ) => {
-    const cartId = `${item.slug}-${
+    /*
+     * SERVIÇO
+     */
+    if (item.type === "service") {
+      const cartId = `service-${
+        item.slug
+      }-${
+        item.serviceType ||
+        "default"
+      }`;
+
+      setItems((currentItems) => {
+        const existingService =
+          currentItems.find(
+            (cartItem) =>
+              cartItem.cartId ===
+              cartId
+          );
+
+        /*
+         * Não duplica o mesmo serviço.
+         */
+        if (existingService) {
+          return currentItems;
+        }
+
+        return [
+          ...currentItems,
+          {
+            cartId,
+
+            type: "service",
+
+            slug: item.slug,
+
+            name: item.name,
+
+            image: item.image,
+
+            price: item.price,
+
+            serviceType:
+              item.serviceType,
+
+            quantity: 1,
+          },
+        ];
+      });
+
+      setIsCartOpen(true);
+
+      return;
+    }
+
+    /*
+     * PRODUTO
+     *
+     * Mantém compatibilidade com os
+     * ProductModal atuais, mesmo que eles
+     * ainda não enviem type: "product".
+     */
+    const cartId = `product-${
+      item.slug
+    }-${
       item.variation || "default"
     }`;
 
     setItems((currentItems) => {
+      /*
+       * Procura também pelo ID antigo
+       * para não duplicar produtos que já
+       * estavam salvos no navegador.
+       */
+      const oldCartId = `${
+        item.slug
+      }-${
+        item.variation || "default"
+      }`;
+
       const existingItem =
         currentItems.find(
           (cartItem) =>
-            cartItem.cartId === cartId
+            cartItem.cartId ===
+              cartId ||
+            cartItem.cartId ===
+              oldCartId
         );
 
       if (existingItem) {
@@ -266,21 +471,30 @@ export function CartProvider({
           (cartItem) => {
             if (
               cartItem.cartId !==
-              cartId
+                existingItem.cartId
             ) {
               return cartItem;
             }
 
+            const currentQuantity =
+              cartItem.quantity || 1;
+
             const newQuantity =
               Math.min(
-                cartItem.quantity +
+                currentQuantity +
                   item.quantity,
                 item.maxStock
               );
 
             return {
               ...cartItem,
+
+              cartId,
+
+              type: "product",
+
               quantity: newQuantity,
+
               maxStock:
                 item.maxStock,
             };
@@ -292,7 +506,11 @@ export function CartProvider({
         ...currentItems,
         {
           ...item,
+
           cartId,
+
+          type: "product",
+
           quantity: Math.min(
             item.quantity,
             item.maxStock
@@ -305,7 +523,7 @@ export function CartProvider({
   };
 
   /*
-   * REMOVER PRODUTO
+   * REMOVER ITEM
    */
   const removeItem = (
     cartId: string
@@ -320,6 +538,8 @@ export function CartProvider({
 
   /*
    * AUMENTAR QUANTIDADE
+   *
+   * Só produto possui quantidade.
    */
   const increaseItem = (
     cartId: string
@@ -333,14 +553,23 @@ export function CartProvider({
         }
 
         if (
-          item.quantity >=
-          item.maxStock
+          item.type === "service"
+        ) {
+          return item;
+        }
+
+        const maxStock =
+          item.maxStock ?? 1;
+
+        if (
+          item.quantity >= maxStock
         ) {
           return item;
         }
 
         return {
           ...item,
+
           quantity:
             item.quantity + 1,
         };
@@ -358,14 +587,24 @@ export function CartProvider({
       currentItems
         .map((item) => {
           if (
-            item.cartId !==
-            cartId
+            item.cartId !== cartId
+          ) {
+            return item;
+          }
+
+          /*
+           * Serviço não usa controle
+           * de quantidade.
+           */
+          if (
+            item.type === "service"
           ) {
             return item;
           }
 
           return {
             ...item,
+
             quantity:
               item.quantity - 1,
           };
@@ -385,7 +624,7 @@ export function CartProvider({
   };
 
   /*
-   * ABRIR / FECHAR
+   * ABRIR / FECHAR CARRINHO
    */
   const openCart = () => {
     setIsCartOpen(true);
@@ -409,12 +648,9 @@ export function CartProvider({
   ) => {
     setCheckout((current) => ({
       ...current,
+
       paymentMethod,
 
-      /*
-       * Se não for crédito,
-       * volta para 1x.
-       */
       installments:
         paymentMethod === "credito"
           ? current.installments
@@ -433,44 +669,56 @@ export function CartProvider({
 
     setCheckout((current) => ({
       ...current,
+
       installments:
         safeInstallments,
     }));
   };
 
   /*
-   * ENTREGA / RETIRADA
+   * ENTREGA DE PRODUTO
    */
-  const setDeliveryMethod = (
-    deliveryMethod: DeliveryMethod
+  const setProductDeliveryMethod = (
+    method: ProductDeliveryMethod
   ) => {
     setCheckout((current) => ({
       ...current,
-      deliveryMethod,
+
+      productDeliveryMethod:
+        method,
     }));
   };
 
   /*
-   * CAMPOS DO ENDEREÇO
+   * TRANSPORTE DE SERVIÇO
+   */
+  const setServiceDeliveryMethod = (
+    method: ServiceDeliveryMethod
+  ) => {
+    setCheckout((current) => ({
+      ...current,
+
+      serviceDeliveryMethod:
+        method,
+    }));
+  };
+
+  /*
+   * DADOS DO CLIENTE / ENDEREÇO
    */
   const updateCheckoutField = (
-    field:
-      | "customerName"
-      | "street"
-      | "number"
-      | "neighborhood"
-      | "complement"
-      | "reference",
+    field: CheckoutField,
     value: string
   ) => {
     setCheckout((current) => ({
       ...current,
+
       [field]: value,
     }));
   };
 
   /*
-   * LIMPAR DADOS DE FINALIZAÇÃO
+   * LIMPAR CHECKOUT
    */
   const resetCheckout = () => {
     setCheckout(defaultCheckout);
@@ -488,43 +736,121 @@ export function CartProvider({
   };
 
   /*
-   * TOTAL DE ITENS
+   * PRODUTOS
    */
-  const totalItems = useMemo(
-    () => {
-      return items.reduce(
-        (total, item) =>
-          total + item.quantity,
-        0
-      );
-    },
+  const productItems = useMemo(
+    () =>
+      items.filter(
+        (item) =>
+          item.type === "product"
+      ),
     [items]
   );
 
   /*
-   * VALOR TOTAL
+   * SERVIÇOS
+   */
+  const serviceItems = useMemo(
+    () =>
+      items.filter(
+        (item) =>
+          item.type === "service"
+      ),
+    [items]
+  );
+
+  const hasProducts =
+    productItems.length > 0;
+
+  const hasServices =
+    serviceItems.length > 0;
+
+  /*
+   * TOTAL DE ITENS
+   *
+   * Produto conta quantidade.
+   * Serviço conta como 1.
+   */
+  const totalItems = useMemo(
+    () =>
+      items.reduce(
+        (total, item) => {
+          if (
+            item.type ===
+            "service"
+          ) {
+            return total + 1;
+          }
+
+          return (
+            total +
+            item.quantity
+          );
+        },
+        0
+      ),
+    [items]
+  );
+
+  /*
+   * SUBTOTAL DOS ITENS
    */
   const totalPrice = useMemo(
-    () => {
-      return items.reduce(
+    () =>
+      items.reduce(
         (total, item) =>
           total +
           item.price *
-            item.quantity,
+            (item.type ===
+            "service"
+              ? 1
+              : item.quantity),
         0
-      );
-    },
+      ),
     [items]
   );
+
+  /*
+   * TAXA DE BUSCA + DEVOLUÇÃO
+   *
+   * Só existe quando:
+   * - há serviço no carrinho
+   * - cliente escolheu buscar
+   */
+  const serviceTransportFee =
+    hasServices &&
+    checkout.serviceDeliveryMethod ===
+      "buscar"
+      ? SERVICE_TRANSPORT_FEE
+      : 0;
+
+  /*
+   * TOTAL FINAL
+   */
+  const finalTotal =
+    totalPrice +
+    serviceTransportFee;
 
   return (
     <CartContext.Provider
       value={{
         items,
 
+        productItems,
+
+        serviceItems,
+
+        hasProducts,
+
+        hasServices,
+
         totalItems,
 
         totalPrice,
+
+        serviceTransportFee,
+
+        finalTotal,
 
         isCartOpen,
 
@@ -550,7 +876,9 @@ export function CartProvider({
 
         setInstallments,
 
-        setDeliveryMethod,
+        setProductDeliveryMethod,
+
+        setServiceDeliveryMethod,
 
         updateCheckoutField,
 

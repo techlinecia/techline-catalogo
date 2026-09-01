@@ -2,27 +2,29 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+
 import ProductCard from "@/components/products/ProductCard";
-import { products, type Product } from "@/data/products";
+import {
+  products,
+  type Product,
+  type Category as ProductCategory,
+} from "@/data/products";
 
-type Category =
+type CatalogCategory =
   | "Todos"
-  | "Hardware"
-  | "Refrigeração"
-  | "Periféricos"
-  | "Gabinetes"
-  | "Decoração para Setup";
+  | Exclude<ProductCategory, "Decoração para Setup">;
 
-const categories: Category[] = [
+const categories: CatalogCategory[] = [
   "Todos",
   "Hardware",
   "Refrigeração",
   "Periféricos",
   "Gabinetes",
-  "Decoração para Setup",
 ];
 
-const categoryFromUrl = (value: string | null): Category => {
+const categoryFromUrl = (
+  value: string | null
+): CatalogCategory => {
   switch (value?.toLowerCase()) {
     case "hardware":
       return "Hardware";
@@ -36,10 +38,6 @@ const categoryFromUrl = (value: string | null): Category => {
     case "gabinetes":
       return "Gabinetes";
 
-    case "decoracao":
-    case "setup":
-      return "Decoração para Setup";
-
     default:
       return "Todos";
   }
@@ -49,7 +47,7 @@ export default function ProductCatalog() {
   const searchParams = useSearchParams();
 
   const [selectedCategory, setSelectedCategory] =
-    useState<Category>("Todos");
+    useState<CatalogCategory>("Todos");
 
   const [search, setSearch] = useState("");
 
@@ -57,38 +55,40 @@ export default function ProductCatalog() {
     const urlSearch = searchParams.get("busca");
     const urlCategory = searchParams.get("categoria");
 
-    if (urlSearch) {
-      setSearch(urlSearch);
-    } else {
-      setSearch("");
-    }
-
+    setSearch(urlSearch ?? "");
     setSelectedCategory(categoryFromUrl(urlCategory));
   }, [searchParams]);
 
   const filteredProducts = useMemo(() => {
+    const searchTerm = search.toLowerCase().trim();
+
     return products.filter((product) => {
       const categoryMatches =
         selectedCategory === "Todos" ||
         product.category === selectedCategory;
 
-      const searchTerm = search.toLowerCase().trim();
+      const variantMatches =
+        product.variants?.some((variant) =>
+          variant.name
+            .toLowerCase()
+            .includes(searchTerm)
+        ) ?? false;
 
       const searchMatches =
         searchTerm === "" ||
-        product.name.toLowerCase().includes(searchTerm) ||
-        product.subcategory.toLowerCase().includes(searchTerm) ||
-        product.category.toLowerCase().includes(searchTerm) ||
+        product.name
+          .toLowerCase()
+          .includes(searchTerm) ||
+        product.subcategory
+          .toLowerCase()
+          .includes(searchTerm) ||
+        product.category
+          .toLowerCase()
+          .includes(searchTerm) ||
         product.description
           ?.toLowerCase()
-          .includes(searchTerm) ||
-        Boolean(
-          product.variants?.some((variant) =>
-            variant.name
-              .toLowerCase()
-              .includes(searchTerm)
-          )
-        );
+          .includes(searchTerm) === true ||
+        variantMatches;
 
       return categoryMatches && searchMatches;
     });
@@ -108,16 +108,8 @@ export default function ProductCatalog() {
     }, {});
   }, [filteredProducts]);
 
-  const categoryLabel = (category: Category) => {
-    if (category === "Decoração para Setup") {
-      return "Setup";
-    }
-
-    return category;
-  };
-
   const handleCategoryChange = (
-    category: Category
+    category: CatalogCategory
   ) => {
     setSelectedCategory(category);
 
@@ -129,14 +121,13 @@ export default function ProductCatalog() {
       params.delete("categoria");
     } else {
       const categoryMap: Record<
-        Exclude<Category, "Todos">,
+        Exclude<CatalogCategory, "Todos">,
         string
       > = {
         Hardware: "hardware",
         Refrigeração: "refrigeracao",
         Periféricos: "perifericos",
         Gabinetes: "gabinetes",
-        "Decoração para Setup": "decoracao",
       };
 
       params.set(
@@ -182,19 +173,21 @@ export default function ProductCatalog() {
 
   const renderProductCard = (
     product: Product
-  ) => (
-    <ProductCard
-      key={product.id}
-      category={product.subcategory}
-      name={product.name}
-      price={product.price}
-      status={product.status}
-      slug={product.slug}
-      image={product.image}
-      offerActive={product.offer?.active}
-      offerPrice={product.offer?.price}
-    />
-  );
+  ) => {
+    return (
+      <ProductCard
+        key={product.id}
+        category={product.subcategory}
+        name={product.name}
+        price={product.price}
+        status={product.status}
+        slug={product.slug}
+        image={product.image}
+        offerActive={product.offer?.active}
+        offerPrice={product.offer?.price}
+      />
+    );
+  };
 
   return (
     <section
@@ -212,7 +205,9 @@ export default function ProductCatalog() {
           </div>
 
           <div className="catalog-search">
-            <span aria-hidden="true">⌕</span>
+            <span aria-hidden="true">
+              ⌕
+            </span>
 
             <input
               type="text"
@@ -243,7 +238,7 @@ export default function ProductCatalog() {
                   handleCategoryChange(category)
                 }
               >
-                {categoryLabel(category)}
+                {category}
               </button>
             ))}
           </div>
@@ -258,8 +253,8 @@ export default function ProductCatalog() {
             </p>
 
             <p className="mt-2 text-sm text-[var(--tl-text-muted)]">
-              Tente outra categoria ou outro termo de
-              busca.
+              Tente outra categoria ou outro termo
+              de busca.
             </p>
           </div>
         ) : selectedCategory === "Todos" ? (
@@ -270,7 +265,9 @@ export default function ProductCatalog() {
           </div>
         ) : (
           <div className="catalog-groups">
-            {Object.entries(groupedProducts).map(
+            {Object.entries(
+              groupedProducts
+            ).map(
               ([subcategory, items]) => (
                 <div
                   className="catalog-group"
@@ -282,7 +279,9 @@ export default function ProductCatalog() {
                         {selectedCategory}
                       </span>
 
-                      <h3>{subcategory}</h3>
+                      <h3>
+                        {subcategory}
+                      </h3>
                     </div>
 
                     <span className="catalog-count">

@@ -17,6 +17,10 @@ export default function Header() {
     items,
     totalItems,
     totalPrice,
+    serviceTransportFee,
+    finalTotal,
+    hasProducts,
+    hasServices,
     isCartOpen,
     removeItem,
     increaseItem,
@@ -27,7 +31,8 @@ export default function Header() {
     checkout,
     setPaymentMethod,
     setInstallments,
-    setDeliveryMethod,
+    setProductDeliveryMethod,
+    setServiceDeliveryMethod,
     updateCheckoutField,
   } = useCart();
 
@@ -40,7 +45,7 @@ export default function Header() {
   }, [isCartOpen]);
 
   useEffect(() => {
-    const sectionIds = ["ofertas", "produtos", "servicos", "contato"];
+    const sectionIds = ["ofertas", "produtos", "contato"];
 
     const updateActiveSection = () => {
       const marker = 190;
@@ -98,19 +103,32 @@ export default function Header() {
     credito: "Cartão de crédito",
   } as const;
 
-  const deliveryLabel = {
+  const productDeliveryLabel = {
     retirada: "Retirada na TECH LINE",
     entrega: "Entrega grátis em Cianorte",
   } as const;
 
+  const serviceDeliveryLabel = {
+    levar: "Levar o PC até a TECH LINE",
+    buscar: "Busca + devolução no endereço",
+  } as const;
+
+  const needsAddress =
+    (hasProducts && checkout.productDeliveryMethod === "entrega") ||
+    (hasServices && checkout.serviceDeliveryMethod === "buscar");
+
+  const addressReady =
+    !needsAddress ||
+    (checkout.customerName.trim() !== "" &&
+      checkout.street.trim() !== "" &&
+      checkout.number.trim() !== "" &&
+      checkout.neighborhood.trim() !== "");
+
   const checkoutReady =
     checkout.paymentMethod !== null &&
-    checkout.deliveryMethod !== null &&
-    (checkout.deliveryMethod !== "entrega" ||
-      (checkout.customerName.trim() !== "" &&
-        checkout.street.trim() !== "" &&
-        checkout.number.trim() !== "" &&
-        checkout.neighborhood.trim() !== ""));
+    (!hasProducts || checkout.productDeliveryMethod !== null) &&
+    (!hasServices || checkout.serviceDeliveryMethod !== null) &&
+    addressReady;
 
   const cartWhatsappMessage = encodeURIComponent(
     [
@@ -118,14 +136,23 @@ export default function Header() {
       "",
       "*MEU PEDIDO*",
       "",
-      ...items.map(
-        (item) =>
-          `• ${item.quantity}x ${item.name}${
-            item.variation ? ` - ${item.variation}` : ""
-          } — ${formatMoney(item.price * item.quantity)}`
-      ),
+      ...items.map((item) => {
+        if (item.type === "service") {
+          return `• 🛠️ ${item.name}${
+            item.serviceType ? ` - ${item.serviceType}` : ""
+          } — ${formatMoney(item.price)}`;
+        }
+
+        return `• ${item.quantity}x ${item.name}${
+          item.variation ? ` - ${item.variation}` : ""
+        } — ${formatMoney(item.price * item.quantity)}`;
+      }),
       "",
-      `*Total: ${formatMoney(totalPrice)}*`,
+      `*Subtotal: ${formatMoney(totalPrice)}*`,
+      serviceTransportFee > 0
+        ? `*Busca + devolução:* ${formatMoney(serviceTransportFee)}`
+        : "",
+      `*Total: ${formatMoney(finalTotal)}*`,
       "",
       checkout.paymentMethod
         ? `*Pagamento:* ${paymentLabel[checkout.paymentMethod]}${
@@ -134,22 +161,21 @@ export default function Header() {
               : ""
           }`
         : "",
-      checkout.deliveryMethod
-        ? `*Recebimento:* ${deliveryLabel[checkout.deliveryMethod]}`
+      hasProducts && checkout.productDeliveryMethod
+        ? `*Produtos:* ${productDeliveryLabel[checkout.productDeliveryMethod]}`
         : "",
-      checkout.deliveryMethod === "entrega"
-        ? `*Nome:* ${checkout.customerName}`
+      hasServices && checkout.serviceDeliveryMethod
+        ? `*Serviço:* ${serviceDeliveryLabel[checkout.serviceDeliveryMethod]}`
         : "",
-      checkout.deliveryMethod === "entrega"
+      needsAddress ? `*Nome:* ${checkout.customerName}` : "",
+      needsAddress
         ? `*Endereço:* ${checkout.street}, ${checkout.number}`
         : "",
-      checkout.deliveryMethod === "entrega"
-        ? `*Bairro:* ${checkout.neighborhood}`
-        : "",
-      checkout.deliveryMethod === "entrega" && checkout.complement.trim()
+      needsAddress ? `*Bairro:* ${checkout.neighborhood}` : "",
+      needsAddress && checkout.complement.trim()
         ? `*Complemento:* ${checkout.complement}`
         : "",
-      checkout.deliveryMethod === "entrega" && checkout.reference.trim()
+      needsAddress && checkout.reference.trim()
         ? `*Referência:* ${checkout.reference}`
         : "",
       "",
@@ -170,7 +196,6 @@ export default function Header() {
     { label: "Início", href: "/#inicio", id: "inicio" },
     { label: "Ofertas", href: "/#ofertas", id: "ofertas" },
     { label: "Produtos", href: "/#produtos", id: "produtos" },
-    { label: "Serviços", href: "/#servicos", id: "servicos" },
     { label: "Contato", href: "/#contato", id: "contato" },
 ];
 
@@ -203,7 +228,7 @@ export default function Header() {
       { label: "Hardware", value: "hardware" },
       { label: "Periféricos", value: "perifericos" },
       { label: "Gabinetes", value: "gabinetes" },
-      { label: "Decoração para Setup", value: "decoracao" },
+      { label: "Refrigeração", value: "refrigeracao" },
     ];
 
     const direct = baseCategories.filter((category) =>
@@ -223,7 +248,7 @@ export default function Header() {
               ? "perifericos"
               : product.category === "Gabinetes"
                 ? "gabinetes"
-                : "decoracao",
+                : "refrigeracao",
       }));
 
     return [...direct, ...subcategories]
@@ -470,7 +495,7 @@ export default function Header() {
                     Carrinho
                   </p>
                   <p className="mt-1 text-[10px] font-bold text-cyan-400">
-                    {totalItems} {totalItems === 1 ? "produto" : "produtos"}
+                    {totalItems} {totalItems === 1 ? "item" : "itens"}
                   </p>
                 </div>
 
@@ -579,7 +604,7 @@ export default function Header() {
         <nav
           className={`hidden border-t ${border} ${navSurface} shadow-[0_3px_0_rgba(34,211,238,0.75)] md:block`}
         >
-          <div className="mx-auto grid max-w-7xl grid-cols-5 px-6">
+          <div className="mx-auto grid max-w-7xl grid-cols-4 px-6">
             {navigation.map((item, index) => {
               const isActive = activeSection === item.id;
 
@@ -814,79 +839,122 @@ export default function Header() {
                       key={item.cartId}
                       className={`border ${border} ${softSurface} p-3`}
                     >
-                      <div className="flex gap-3">
-                        <div
-                          className={`h-20 w-20 shrink-0 overflow-hidden border ${border} ${softSurface}`}
-                        >
-                          {item.image ? (
-                            <img
-                              src={item.image}
-                              alt={item.name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full items-center justify-center text-[8px] text-zinc-600">
-                              SEM FOTO
+                      {item.type === "service" ? (
+                        <>
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-16 w-16 shrink-0 items-center justify-center border border-cyan-400/30 bg-cyan-400/10 text-2xl">
+                              🛠️
                             </div>
-                          )}
-                        </div>
 
-                        <div className="min-w-0 flex-1">
-                          <p className={`line-clamp-2 text-sm font-black ${primaryText}`}>
-                            {item.name}
-                          </p>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[9px] font-black uppercase tracking-[0.16em] text-cyan-400">
+                                Serviço
+                              </p>
 
-                          {item.variation && (
-                            <p className={`mt-1 text-xs ${secondaryText}`}>
-                              Cor: {item.variation}
+                              <p className={`mt-1 line-clamp-2 text-sm font-black ${primaryText}`}>
+                                {item.name}
+                              </p>
+
+                              {item.serviceType && (
+                                <p className={`mt-1 text-xs ${secondaryText}`}>
+                                  {item.serviceType}
+                                </p>
+                              )}
+
+                              <p className="mt-2 text-sm font-black text-cyan-400">
+                                {formatMoney(item.price)}
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => removeItem(item.cartId)}
+                              className="self-start text-lg text-zinc-500 transition hover:text-red-400"
+                              aria-label={`Remover ${item.name}`}
+                            >
+                              ×
+                            </button>
+                          </div>
+
+                          <div className={`mt-3 border-t ${border} pt-3`}>
+                            <p className={`text-[10px] leading-5 ${secondaryText}`}>
+                              Serviço técnico • sem controle de quantidade
                             </p>
-                          )}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex gap-3">
+                            <div className={`h-20 w-20 shrink-0 overflow-hidden border ${border} ${softSurface}`}>
+                              {item.image ? (
+                                <img
+                                  src={item.image}
+                                  alt={item.name}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex h-full items-center justify-center text-[8px] text-zinc-600">
+                                  SEM FOTO
+                                </div>
+                              )}
+                            </div>
 
-                          <p className="mt-2 text-sm font-black text-cyan-400">
-                            {formatMoney(item.price)}
-                          </p>
-                        </div>
+                            <div className="min-w-0 flex-1">
+                              <p className={`line-clamp-2 text-sm font-black ${primaryText}`}>
+                                {item.name}
+                              </p>
 
-                        <button
-                          type="button"
-                          onClick={() => removeItem(item.cartId)}
-                          className="self-start text-lg text-zinc-500 transition hover:text-red-400"
-                          aria-label={`Remover ${item.name}`}
-                        >
-                          ×
-                        </button>
-                      </div>
+                              {item.variation && (
+                                <p className={`mt-1 text-xs ${secondaryText}`}>
+                                  Cor: {item.variation}
+                                </p>
+                              )}
 
-                      <div className="mt-3 flex items-center justify-between gap-3">
-                        <div className={`flex h-10 items-center border ${border}`}>
-                          <button
-                            type="button"
-                            onClick={() => decreaseItem(item.cartId)}
-                            className={`flex h-full w-10 items-center justify-center text-lg ${primaryText}`}
-                          >
-                            −
-                          </button>
+                              <p className="mt-2 text-sm font-black text-cyan-400">
+                                {formatMoney(item.price)}
+                              </p>
+                            </div>
 
-                          <span
-                            className={`flex h-full min-w-10 items-center justify-center border-x ${border} text-sm font-black ${primaryText}`}
-                          >
-                            {item.quantity}
-                          </span>
+                            <button
+                              type="button"
+                              onClick={() => removeItem(item.cartId)}
+                              className="self-start text-lg text-zinc-500 transition hover:text-red-400"
+                              aria-label={`Remover ${item.name}`}
+                            >
+                              ×
+                            </button>
+                          </div>
 
-                          <button
-                            type="button"
-                            onClick={() => increaseItem(item.cartId)}
-                            disabled={item.quantity >= item.maxStock}
-                            className={`flex h-full w-10 items-center justify-center text-lg ${primaryText} disabled:text-zinc-700`}
-                          >
-                            +
-                          </button>
-                        </div>
+                          <div className="mt-3 flex items-center justify-between gap-3">
+                            <div className={`flex h-10 items-center border ${border}`}>
+                              <button
+                                type="button"
+                                onClick={() => decreaseItem(item.cartId)}
+                                className={`flex h-full w-10 items-center justify-center text-lg ${primaryText}`}
+                              >
+                                −
+                              </button>
 
-                        <p className={`text-sm font-black ${primaryText}`}>
-                          {formatMoney(item.price * item.quantity)}
-                        </p>
-                      </div>
+                              <span className={`flex h-full min-w-10 items-center justify-center border-x ${border} text-sm font-black ${primaryText}`}>
+                                {item.quantity}
+                              </span>
+
+                              <button
+                                type="button"
+                                onClick={() => increaseItem(item.cartId)}
+                                disabled={item.quantity >= (item.maxStock ?? 1)}
+                                className={`flex h-full w-10 items-center justify-center text-lg ${primaryText} disabled:text-zinc-700`}
+                              >
+                                +
+                              </button>
+                            </div>
+
+                            <p className={`text-sm font-black ${primaryText}`}>
+                              {formatMoney(item.price * item.quantity)}
+                            </p>
+                          </div>
+                        </>
+                      )}
                     </article>
                   ))}
                 </div>
@@ -966,7 +1034,7 @@ export default function Header() {
                     </div>
 
                     <strong className="text-xl font-black text-cyan-400">
-                      {formatMoney(totalPrice)}
+                      {formatMoney(finalTotal)}
                     </strong>
                   </div>
                 </div>
@@ -1032,54 +1100,103 @@ export default function Header() {
                   )}
                 </div>
 
-                {/* ENTREGA / RETIRADA */}
-                <div className="mt-5">
-                  <p className={`text-xs font-black uppercase tracking-[0.14em] ${primaryText}`}>
-                    Como deseja receber?
-                  </p>
-
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setDeliveryMethod("retirada")}
-                      className={`min-h-12 border px-3 text-xs font-bold transition ${
-                        checkout.deliveryMethod === "retirada"
-                          ? "border-cyan-400 bg-cyan-400/10 text-cyan-400"
-                          : `${border} ${primaryText}`
-                      }`}
-                    >
-                      🏪 Retirar
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setDeliveryMethod("entrega")}
-                      className={`min-h-12 border px-3 text-xs font-bold transition ${
-                        checkout.deliveryMethod === "entrega"
-                          ? "border-cyan-400 bg-cyan-400/10 text-cyan-400"
-                          : `${border} ${primaryText}`
-                      }`}
-                    >
-                      🚚 Entrega grátis
-                    </button>
-                  </div>
-
-                  {checkout.deliveryMethod === "entrega" && (
-                    <p className="mt-2 text-[10px] font-bold text-cyan-400">
-                      Entrega grátis dentro do perímetro urbano de Cianorte.
+                {/* ENTREGA DOS PRODUTOS */}
+                {hasProducts && (
+                  <div className="mt-5">
+                    <p className={`text-xs font-black uppercase tracking-[0.14em] ${primaryText}`}>
+                      Como deseja receber os produtos?
                     </p>
-                  )}
-                </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setProductDeliveryMethod("retirada")}
+                        className={`min-h-12 border px-3 text-xs font-bold transition ${
+                          checkout.productDeliveryMethod === "retirada"
+                            ? "border-cyan-400 bg-cyan-400/10 text-cyan-400"
+                            : `${border} ${primaryText}`
+                        }`}
+                      >
+                        🏪 Retirar
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setProductDeliveryMethod("entrega")}
+                        className={`min-h-12 border px-3 text-xs font-bold transition ${
+                          checkout.productDeliveryMethod === "entrega"
+                            ? "border-cyan-400 bg-cyan-400/10 text-cyan-400"
+                            : `${border} ${primaryText}`
+                        }`}
+                      >
+                        🚚 Entrega grátis
+                      </button>
+                    </div>
+
+                    {checkout.productDeliveryMethod === "entrega" && (
+                      <p className="mt-2 text-[10px] font-bold text-cyan-400">
+                        Entrega grátis dentro do perímetro urbano de Cianorte.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* TRANSPORTE DO SERVIÇO */}
+                {hasServices && (
+                  <div className="mt-5">
+                    <p className={`text-xs font-black uppercase tracking-[0.14em] ${primaryText}`}>
+                      Como o PC chegará até a TECH LINE?
+                    </p>
+
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setServiceDeliveryMethod("levar")}
+                        className={`min-h-14 border px-3 text-xs font-bold transition ${
+                          checkout.serviceDeliveryMethod === "levar"
+                            ? "border-cyan-400 bg-cyan-400/10 text-cyan-400"
+                            : `${border} ${primaryText}`
+                        }`}
+                      >
+                        🏪 Levar o PC
+                        <span className="mt-1 block text-[9px] font-black text-emerald-400">
+                          GRÁTIS
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setServiceDeliveryMethod("buscar")}
+                        className={`min-h-14 border px-3 text-xs font-bold transition ${
+                          checkout.serviceDeliveryMethod === "buscar"
+                            ? "border-cyan-400 bg-cyan-400/10 text-cyan-400"
+                            : `${border} ${primaryText}`
+                        }`}
+                      >
+                        🚗 Buscar + devolver
+                        <span className="mt-1 block text-[9px] font-black text-amber-400">
+                          + R$ 10,00
+                        </span>
+                      </button>
+                    </div>
+
+                    <p className={`mt-2 text-[10px] leading-5 ${secondaryText}`}>
+                      Na opção de R$ 10,00, a TECH LINE busca o computador no endereço e devolve após a conclusão do serviço.
+                    </p>
+                  </div>
+                )}
 
                 {/* ENDEREÇO */}
-                {checkout.deliveryMethod === "entrega" && (
+                {needsAddress && (
                   <div className="mt-4 space-y-2">
+                    <p className={`text-[10px] font-black uppercase tracking-[0.14em] ${secondaryText}`}>
+                      Endereço
+                    </p>
+
                     <input
                       type="text"
                       value={checkout.customerName}
-                      onChange={(event) =>
-                        updateCheckoutField("customerName", event.target.value)
-                      }
+                      onChange={(event) => updateCheckoutField("customerName", event.target.value)}
                       placeholder="Seu nome *"
                       className={`h-11 w-full border ${border} ${softSurface} px-3 text-sm outline-none ${primaryText}`}
                     />
@@ -1088,9 +1205,7 @@ export default function Header() {
                       <input
                         type="text"
                         value={checkout.street}
-                        onChange={(event) =>
-                          updateCheckoutField("street", event.target.value)
-                        }
+                        onChange={(event) => updateCheckoutField("street", event.target.value)}
                         placeholder="Rua / Avenida *"
                         className={`h-11 min-w-0 border ${border} ${softSurface} px-3 text-sm outline-none ${primaryText}`}
                       />
@@ -1098,9 +1213,7 @@ export default function Header() {
                       <input
                         type="text"
                         value={checkout.number}
-                        onChange={(event) =>
-                          updateCheckoutField("number", event.target.value)
-                        }
+                        onChange={(event) => updateCheckoutField("number", event.target.value)}
                         placeholder="Nº *"
                         className={`h-11 min-w-0 border ${border} ${softSurface} px-3 text-sm outline-none ${primaryText}`}
                       />
@@ -1109,9 +1222,7 @@ export default function Header() {
                     <input
                       type="text"
                       value={checkout.neighborhood}
-                      onChange={(event) =>
-                        updateCheckoutField("neighborhood", event.target.value)
-                      }
+                      onChange={(event) => updateCheckoutField("neighborhood", event.target.value)}
                       placeholder="Bairro *"
                       className={`h-11 w-full border ${border} ${softSurface} px-3 text-sm outline-none ${primaryText}`}
                     />
@@ -1119,9 +1230,7 @@ export default function Header() {
                     <input
                       type="text"
                       value={checkout.complement}
-                      onChange={(event) =>
-                        updateCheckoutField("complement", event.target.value)
-                      }
+                      onChange={(event) => updateCheckoutField("complement", event.target.value)}
                       placeholder="Complemento (opcional)"
                       className={`h-11 w-full border ${border} ${softSurface} px-3 text-sm outline-none ${primaryText}`}
                     />
@@ -1129,12 +1238,32 @@ export default function Header() {
                     <input
                       type="text"
                       value={checkout.reference}
-                      onChange={(event) =>
-                        updateCheckoutField("reference", event.target.value)
-                      }
+                      onChange={(event) => updateCheckoutField("reference", event.target.value)}
                       placeholder="Ponto de referência (opcional)"
                       className={`h-11 w-full border ${border} ${softSurface} px-3 text-sm outline-none ${primaryText}`}
                     />
+                  </div>
+                )}
+
+                {serviceTransportFee > 0 && (
+                  <div className={`mt-5 border ${border} ${softSurface} p-4`}>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className={`text-xs ${secondaryText}`}>
+                        Busca + devolução
+                      </span>
+                      <strong className="text-sm font-black text-amber-400">
+                        {formatMoney(serviceTransportFee)}
+                      </strong>
+                    </div>
+
+                    <div className={`mt-3 flex items-center justify-between border-t ${border} pt-3`}>
+                      <span className={`text-xs font-black uppercase ${primaryText}`}>
+                        Total final
+                      </span>
+                      <strong className="text-xl font-black text-cyan-400">
+                        {formatMoney(finalTotal)}
+                      </strong>
+                    </div>
                   </div>
                 )}
 
@@ -1142,11 +1271,13 @@ export default function Header() {
                   <p className="mt-4 text-center text-[11px] font-bold text-amber-500">
                     {!checkout.paymentMethod
                       ? "Escolha uma forma de pagamento para continuar."
-                      : !checkout.deliveryMethod
-                        ? "Escolha como deseja receber o pedido."
-                        : checkout.deliveryMethod === "entrega"
-                          ? "Preencha os campos obrigatórios do endereço para finalizar."
-                          : "Revise os dados para finalizar o pedido."}
+                      : hasProducts && !checkout.productDeliveryMethod
+                        ? "Escolha como deseja receber os produtos."
+                        : hasServices && !checkout.serviceDeliveryMethod
+                          ? "Escolha como o computador chegará até a TECH LINE."
+                          : needsAddress && !addressReady
+                            ? "Preencha os campos obrigatórios do endereço para finalizar."
+                            : "Revise os dados para finalizar o pedido."}
                   </p>
                 )}
               </div>

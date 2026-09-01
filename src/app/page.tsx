@@ -5,6 +5,7 @@ import Hero from "@/components/home/Hero";
 import Categories from "@/components/home/Categories";
 import WeeklyOffers from "@/components/home/WeeklyOffers";
 import ProductCatalog from "@/components/home/ProductCatalog";
+import ContactSection from "@/components/home/ContactSection";
 
 export default function Home() {
   return (
@@ -29,6 +30,8 @@ export default function Home() {
         >
           <ProductCatalog />
         </Suspense>
+
+        <ContactSection />
       </main>
     </>
   );

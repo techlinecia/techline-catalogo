@@ -33,22 +33,15 @@ export default function Hero() {
           </h1>
 
           <p className="hero-description mt-5 max-w-xl text-[15px] leading-7 sm:mt-6 sm:text-base md:text-lg">
-            Hardware, periféricos, acessórios e assistência técnica em um só lugar.
+            Hardware, periféricos e acessórios para deixar seu setup completo.
           </p>
 
-          <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row">
+          <div className="mt-6 flex sm:mt-8">
             <Link
               href="/#produtos"
               className="bg-cyan-400 px-6 py-3 text-center text-sm font-black text-black transition hover:bg-cyan-300"
             >
               Explorar produtos
-            </Link>
-
-            <Link
-              href="/#servicos"
-              className="hero-secondary-button border px-6 py-3 text-center text-sm font-bold transition hover:border-cyan-400 hover:text-cyan-400"
-            >
-              Conheça nossos serviços
             </Link>
           </div>
         </div>

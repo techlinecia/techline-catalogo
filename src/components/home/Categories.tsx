@@ -19,12 +19,6 @@ const categories = [
     href: "/?categoria=gabinetes#produtos",
     image: "/Gabinetes.png",
   },
-  {
-    name: "Decoração para Setup",
-    description: "Deixe seu espaço com a sua cara",
-    href: "/?categoria=decoracao#produtos",
-    image: "/Setup.png",
-  },
 ];
 
 export default function Categories() {
@@ -50,7 +44,7 @@ export default function Categories() {
           </Link>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-3">
           {categories.map((category) => (
             <Link
               key={category.name}

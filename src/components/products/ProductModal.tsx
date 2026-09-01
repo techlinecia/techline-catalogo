@@ -53,11 +53,16 @@ export default function ProductModal({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [search, setSearch] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [checkoutStep, setCheckoutStep] = useState<"cart" | "checkout">("cart");
 
   const {
     items,
     totalItems,
     totalPrice,
+    serviceTransportFee,
+    finalTotal,
+    hasProducts,
+    hasServices,
     isCartOpen,
     addItem,
     removeItem,
@@ -66,6 +71,12 @@ export default function ProductModal({
     clearCart,
     openCart,
     closeCart,
+    checkout,
+    setPaymentMethod,
+    setInstallments,
+    setProductDeliveryMethod,
+    setServiceDeliveryMethod,
+    updateCheckoutField,
   } = useCart();
 
   const { isLightMode, toggleTheme } = useTheme();
@@ -77,6 +88,7 @@ export default function ProductModal({
       setSelectedImageIndex(0);
       setSearch("");
       setMenuOpen(false);
+      setCheckoutStep("cart");
     }
   }, [open, product]);
 
@@ -185,6 +197,7 @@ export default function ProductModal({
     if (currentStock <= 0) return;
 
     addItem({
+      type: "product",
       slug: product.slug,
       name: product.name,
       image: selectedCartImage,
@@ -201,18 +214,91 @@ export default function ProductModal({
       currency: "BRL",
     }).format(value);
 
+  const paymentLabel = {
+    pix: "Pix",
+    dinheiro: "Dinheiro",
+    debito: "Cartão de débito",
+    credito: "Cartão de crédito",
+  } as const;
+
+  const productDeliveryLabel = {
+    retirada: "Retirada na TECH LINE",
+    entrega: "Entrega grátis em Cianorte",
+  } as const;
+
+  const serviceDeliveryLabel = {
+    levar: "Levar o PC até a TECH LINE",
+    buscar: "Busca + devolução no endereço",
+  } as const;
+
+  const needsAddress =
+    (hasProducts && checkout.productDeliveryMethod === "entrega") ||
+    (hasServices && checkout.serviceDeliveryMethod === "buscar");
+
+  const addressReady =
+    !needsAddress ||
+    (checkout.customerName.trim() !== "" &&
+      checkout.street.trim() !== "" &&
+      checkout.number.trim() !== "" &&
+      checkout.neighborhood.trim() !== "");
+
+  const checkoutReady =
+    checkout.paymentMethod !== null &&
+    (!hasProducts || checkout.productDeliveryMethod !== null) &&
+    (!hasServices || checkout.serviceDeliveryMethod !== null) &&
+    addressReady;
+
   const cartWhatsappMessage = encodeURIComponent(
     [
-      "Olá! Vim pelo catálogo da TECH LINE e quero finalizar este pedido:",
+      "Olá! Vim pelo catálogo da TECH LINE e gostaria de finalizar meu pedido:",
       "",
-      ...items.flatMap((item) => [
-        `${item.quantity}x ${item.name}${item.variation ? ` - ${item.variation}` : ""}`,
-        `${formatMoney(item.price)} cada`,
-        `Subtotal: ${formatMoney(item.price * item.quantity)}`,
-        "",
-      ]),
-      `Total: ${formatMoney(totalPrice)}`,
-    ].join("\n")
+      "*MEU PEDIDO*",
+      "",
+      ...items.map((item) => {
+        if (item.type === "service") {
+          return `• 🛠️ ${item.name}${
+            item.serviceType ? ` - ${item.serviceType}` : ""
+          } — ${formatMoney(item.price)}`;
+        }
+
+        return `• ${item.quantity}x ${item.name}${
+          item.variation ? ` - ${item.variation}` : ""
+        } — ${formatMoney(item.price * item.quantity)}`;
+      }),
+      "",
+      `*Subtotal: ${formatMoney(totalPrice)}*`,
+      serviceTransportFee > 0
+        ? `*Busca + devolução:* ${formatMoney(serviceTransportFee)}`
+        : "",
+      `*Total: ${formatMoney(finalTotal)}*`,
+      "",
+      checkout.paymentMethod
+        ? `*Pagamento:* ${paymentLabel[checkout.paymentMethod]}${
+            checkout.paymentMethod === "credito"
+              ? ` em ${checkout.installments}x`
+              : ""
+          }`
+        : "",
+      hasProducts && checkout.productDeliveryMethod
+        ? `*Produtos:* ${productDeliveryLabel[checkout.productDeliveryMethod]}`
+        : "",
+      hasServices && checkout.serviceDeliveryMethod
+        ? `*Serviço:* ${serviceDeliveryLabel[checkout.serviceDeliveryMethod]}`
+        : "",
+      needsAddress ? `*Nome:* ${checkout.customerName}` : "",
+      needsAddress ? `*Endereço:* ${checkout.street}, ${checkout.number}` : "",
+      needsAddress ? `*Bairro:* ${checkout.neighborhood}` : "",
+      needsAddress && checkout.complement.trim()
+        ? `*Complemento:* ${checkout.complement}`
+        : "",
+      needsAddress && checkout.reference.trim()
+        ? `*Referência:* ${checkout.reference}`
+        : "",
+      "",
+      "Poderia me confirmar a disponibilidade e finalizar o pedido?",
+    ]
+      .filter((line) => line !== "")
+      .join("\n")
   );
 
   const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
@@ -439,10 +525,12 @@ export default function ProductModal({
             <div className={`flex h-[72px] items-center justify-between border-b ${border} px-5`}>
               <div>
                 <p className={`text-lg font-black ${primaryText}`}>
-                  Seu carrinho
+                  {checkoutStep === "checkout" ? "Finalizar pedido" : "Seu carrinho"}
                 </p>
                 <p className={`mt-1 text-xs ${secondaryText}`}>
-                  {totalItems} {totalItems === 1 ? "item" : "itens"}
+                  {checkoutStep === "checkout"
+                    ? "Pagamento e entrega"
+                    : `${totalItems} ${totalItems === 1 ? "item" : "itens"}`}
                 </p>
               </div>
 
@@ -463,9 +551,8 @@ export default function ProductModal({
                   Seu carrinho está vazio
                 </p>
                 <p className={`mt-2 max-w-[260px] text-sm leading-6 ${secondaryText}`}>
-                  Adicione um produto para montar seu pedido.
+                  Adicione produtos ou serviços para montar seu pedido.
                 </p>
-
                 <button
                   type="button"
                   onClick={closeCart}
@@ -474,7 +561,7 @@ export default function ProductModal({
                   Continuar comprando
                 </button>
               </div>
-            ) : (
+            ) : checkoutStep === "cart" ? (
               <>
                 <div className="flex-1 overflow-y-auto p-4 md:p-5">
                   <div className="space-y-3">
@@ -483,81 +570,113 @@ export default function ProductModal({
                         key={item.cartId}
                         className={`border ${border} ${softPanel} p-3`}
                       >
-                        <div className="flex gap-3">
-                          <div
-                            className={`h-20 w-20 shrink-0 overflow-hidden border ${border} ${
-                              isLightMode ? "bg-zinc-100" : "bg-[#0b1013]"
-                            }`}
-                          >
-                            {item.image ? (
-                              <img
-                                src={item.image}
-                                alt={item.name}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <div className="flex h-full items-center justify-center text-[8px] text-zinc-600">
-                                SEM FOTO
+                        {item.type === "service" ? (
+                          <>
+                            <div className="flex items-start gap-3">
+                              <div className="flex h-16 w-16 shrink-0 items-center justify-center border border-cyan-400/30 bg-cyan-400/10 text-2xl">
+                                🛠️
                               </div>
-                            )}
-                          </div>
 
-                          <div className="min-w-0 flex-1">
-                            <p className={`line-clamp-2 text-sm font-black ${primaryText}`}>
-                              {item.name}
-                            </p>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[9px] font-black uppercase tracking-[0.16em] text-cyan-400">
+                                  Serviço
+                                </p>
+                                <p className={`mt-1 line-clamp-2 text-sm font-black ${primaryText}`}>
+                                  {item.name}
+                                </p>
+                                {item.serviceType && (
+                                  <p className={`mt-1 text-xs ${secondaryText}`}>
+                                    {item.serviceType}
+                                  </p>
+                                )}
+                                <p className="mt-2 text-sm font-black text-cyan-400">
+                                  {formatMoney(item.price)}
+                                </p>
+                              </div>
 
-                            {item.variation && (
-                              <p className={`mt-1 text-xs ${secondaryText}`}>
-                                Cor: {item.variation}
+                              <button
+                                type="button"
+                                onClick={() => removeItem(item.cartId)}
+                                className="self-start text-lg text-zinc-500 transition hover:text-red-400"
+                                aria-label={`Remover ${item.name}`}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex gap-3">
+                              <div
+                                className={`h-20 w-20 shrink-0 overflow-hidden border ${border} ${
+                                  isLightMode ? "bg-zinc-100" : "bg-[#0b1013]"
+                                }`}
+                              >
+                                {item.image ? (
+                                  <img
+                                    src={item.image}
+                                    alt={item.name}
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="flex h-full items-center justify-center text-[8px] text-zinc-600">
+                                    SEM FOTO
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="min-w-0 flex-1">
+                                <p className={`line-clamp-2 text-sm font-black ${primaryText}`}>
+                                  {item.name}
+                                </p>
+                                {item.variation && (
+                                  <p className={`mt-1 text-xs ${secondaryText}`}>
+                                    Cor: {item.variation}
+                                  </p>
+                                )}
+                                <p className="mt-2 text-sm font-black text-cyan-400">
+                                  {formatMoney(item.price)}
+                                </p>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => removeItem(item.cartId)}
+                                className="self-start text-lg text-zinc-500 transition hover:text-red-400"
+                                aria-label={`Remover ${item.name}`}
+                              >
+                                ×
+                              </button>
+                            </div>
+
+                            <div className="mt-3 flex items-center justify-between gap-3">
+                              <div className={`flex h-10 items-center border ${border}`}>
+                                <button
+                                  type="button"
+                                  onClick={() => decreaseItem(item.cartId)}
+                                  className={`flex h-full w-10 items-center justify-center text-lg ${primaryText}`}
+                                >
+                                  −
+                                </button>
+                                <span className={`flex h-full min-w-10 items-center justify-center border-x ${border} text-sm font-black ${primaryText}`}>
+                                  {item.quantity}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => increaseItem(item.cartId)}
+                                  disabled={item.quantity >= (item.maxStock ?? 1)}
+                                  className={`flex h-full w-10 items-center justify-center text-lg ${primaryText} disabled:text-zinc-700`}
+                                >
+                                  +
+                                </button>
+                              </div>
+
+                              <p className={`text-sm font-black ${primaryText}`}>
+                                {formatMoney(item.price * item.quantity)}
                               </p>
-                            )}
-
-                            <p className="mt-2 text-sm font-black text-cyan-400">
-                              {formatMoney(item.price)}
-                            </p>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => removeItem(item.cartId)}
-                            className="self-start text-lg text-zinc-500 transition hover:text-red-400"
-                            aria-label={`Remover ${item.name}`}
-                          >
-                            ×
-                          </button>
-                        </div>
-
-                        <div className="mt-3 flex items-center justify-between gap-3">
-                          <div className={`flex h-10 items-center border ${border}`}>
-                            <button
-                              type="button"
-                              onClick={() => decreaseItem(item.cartId)}
-                              className={`flex h-full w-10 items-center justify-center text-lg ${primaryText}`}
-                            >
-                              −
-                            </button>
-
-                            <span
-                              className={`flex h-full min-w-10 items-center justify-center border-x ${border} text-sm font-black ${primaryText}`}
-                            >
-                              {item.quantity}
-                            </span>
-
-                            <button
-                              type="button"
-                              onClick={() => increaseItem(item.cartId)}
-                              disabled={item.quantity >= item.maxStock}
-                              className={`flex h-full w-10 items-center justify-center text-lg ${primaryText} disabled:text-zinc-700`}
-                            >
-                              +
-                            </button>
-                          </div>
-
-                          <p className={`text-sm font-black ${primaryText}`}>
-                            {formatMoney(item.price * item.quantity)}
-                          </p>
-                        </div>
+                            </div>
+                          </>
+                        )}
                       </article>
                     ))}
                   </div>
@@ -565,20 +684,19 @@ export default function ProductModal({
 
                 <div className={`border-t ${border} p-4 md:p-5`}>
                   <div className="flex items-center justify-between gap-4">
-                    <span className={`text-sm ${secondaryText}`}>Total</span>
+                    <span className={`text-sm ${secondaryText}`}>Subtotal</span>
                     <strong className="text-2xl font-black text-cyan-400">
                       {formatMoney(totalPrice)}
                     </strong>
                   </div>
 
-                  <a
-                    href={`https://wa.me/5544991373517?text=${cartWhatsappMessage}`}
-                    target="_blank"
-                    rel="noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutStep("checkout")}
                     className="mt-4 flex min-h-14 w-full items-center justify-center bg-cyan-400 px-5 text-center text-sm font-black uppercase tracking-wide text-black transition hover:bg-cyan-300"
                   >
-                    Finalizar pelo WhatsApp
-                  </a>
+                    Continuar para finalização
+                  </button>
 
                   <div className="mt-3 grid grid-cols-2 gap-3">
                     <button
@@ -597,6 +715,284 @@ export default function ProductModal({
                       Limpar carrinho
                     </button>
                   </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex-1 overflow-y-auto p-4 md:p-5">
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutStep("cart")}
+                    className={`mb-5 text-xs font-bold ${secondaryText} transition hover:text-cyan-400`}
+                  >
+                    ← Voltar ao carrinho
+                  </button>
+
+                  <div className={`border ${border} ${softPanel} p-4`}>
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className={`text-xs font-black uppercase tracking-[0.14em] ${primaryText}`}>
+                          Resumo
+                        </p>
+                        <p className={`mt-1 text-xs ${secondaryText}`}>
+                          {totalItems} {totalItems === 1 ? "item" : "itens"}
+                        </p>
+                      </div>
+                      <strong className="text-xl font-black text-cyan-400">
+                        {formatMoney(finalTotal)}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="mt-5">
+                    <p className={`text-xs font-black uppercase tracking-[0.14em] ${primaryText}`}>
+                      Forma de pagamento
+                    </p>
+
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      {[
+                        ["pix", "⚡ Pix"],
+                        ["dinheiro", "💵 Dinheiro"],
+                        ["debito", "💳 Débito"],
+                        ["credito", "💳 Crédito"],
+                      ].map(([value, label]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() =>
+                            setPaymentMethod(
+                              value as "pix" | "dinheiro" | "debito" | "credito"
+                            )
+                          }
+                          className={`min-h-11 border px-3 text-xs font-bold transition ${
+                            checkout.paymentMethod === value
+                              ? "border-cyan-400 bg-cyan-400/10 text-cyan-400"
+                              : `${border} ${primaryText}`
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {checkout.paymentMethod === "credito" && (
+                      <div className="mt-3">
+                        <label className={`text-xs ${secondaryText}`}>
+                          Parcelamento
+                        </label>
+                        <select
+                          value={checkout.installments}
+                          onChange={(event) =>
+                            setInstallments(Number(event.target.value))
+                          }
+                          className={`mt-2 h-11 w-full border ${border} ${softPanel} px-3 text-sm outline-none ${primaryText}`}
+                        >
+                          {Array.from({ length: 12 }, (_, index) => index + 1).map(
+                            (installment) => (
+                              <option key={installment} value={installment}>
+                                {installment}x
+                              </option>
+                            )
+                          )}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  {hasProducts && (
+                    <div className="mt-5">
+                      <p className={`text-xs font-black uppercase tracking-[0.14em] ${primaryText}`}>
+                        Produtos
+                      </p>
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setProductDeliveryMethod("retirada")}
+                          className={`min-h-12 border px-3 text-xs font-bold transition ${
+                            checkout.productDeliveryMethod === "retirada"
+                              ? "border-cyan-400 bg-cyan-400/10 text-cyan-400"
+                              : `${border} ${primaryText}`
+                          }`}
+                        >
+                          🏪 Retirar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setProductDeliveryMethod("entrega")}
+                          className={`min-h-12 border px-3 text-xs font-bold transition ${
+                            checkout.productDeliveryMethod === "entrega"
+                              ? "border-cyan-400 bg-cyan-400/10 text-cyan-400"
+                              : `${border} ${primaryText}`
+                          }`}
+                        >
+                          🚚 Entrega grátis
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {hasServices && (
+                    <div className="mt-5">
+                      <p className={`text-xs font-black uppercase tracking-[0.14em] ${primaryText}`}>
+                        Serviço
+                      </p>
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setServiceDeliveryMethod("levar")}
+                          className={`min-h-14 border px-3 text-xs font-bold transition ${
+                            checkout.serviceDeliveryMethod === "levar"
+                              ? "border-cyan-400 bg-cyan-400/10 text-cyan-400"
+                              : `${border} ${primaryText}`
+                          }`}
+                        >
+                          🏪 Levar o PC
+                          <span className="mt-1 block text-[9px] text-emerald-400">
+                            GRÁTIS
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setServiceDeliveryMethod("buscar")}
+                          className={`min-h-14 border px-3 text-xs font-bold transition ${
+                            checkout.serviceDeliveryMethod === "buscar"
+                              ? "border-cyan-400 bg-cyan-400/10 text-cyan-400"
+                              : `${border} ${primaryText}`
+                          }`}
+                        >
+                          🚗 Buscar + devolver
+                          <span className="mt-1 block text-[9px] text-amber-400">
+                            + R$ 10,00
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {needsAddress && (
+                    <div className="mt-4 space-y-2">
+                      <input
+                        type="text"
+                        value={checkout.customerName}
+                        onChange={(event) =>
+                          updateCheckoutField("customerName", event.target.value)
+                        }
+                        placeholder="Seu nome *"
+                        className={`h-11 w-full border ${border} ${softPanel} px-3 text-sm outline-none ${primaryText}`}
+                      />
+                      <div className="grid grid-cols-[1fr_90px] gap-2">
+                        <input
+                          type="text"
+                          value={checkout.street}
+                          onChange={(event) =>
+                            updateCheckoutField("street", event.target.value)
+                          }
+                          placeholder="Rua / Avenida *"
+                          className={`h-11 min-w-0 border ${border} ${softPanel} px-3 text-sm outline-none ${primaryText}`}
+                        />
+                        <input
+                          type="text"
+                          value={checkout.number}
+                          onChange={(event) =>
+                            updateCheckoutField("number", event.target.value)
+                          }
+                          placeholder="Nº *"
+                          className={`h-11 min-w-0 border ${border} ${softPanel} px-3 text-sm outline-none ${primaryText}`}
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        value={checkout.neighborhood}
+                        onChange={(event) =>
+                          updateCheckoutField("neighborhood", event.target.value)
+                        }
+                        placeholder="Bairro *"
+                        className={`h-11 w-full border ${border} ${softPanel} px-3 text-sm outline-none ${primaryText}`}
+                      />
+                      <input
+                        type="text"
+                        value={checkout.complement}
+                        onChange={(event) =>
+                          updateCheckoutField("complement", event.target.value)
+                        }
+                        placeholder="Complemento (opcional)"
+                        className={`h-11 w-full border ${border} ${softPanel} px-3 text-sm outline-none ${primaryText}`}
+                      />
+                      <input
+                        type="text"
+                        value={checkout.reference}
+                        onChange={(event) =>
+                          updateCheckoutField("reference", event.target.value)
+                        }
+                        placeholder="Ponto de referência (opcional)"
+                        className={`h-11 w-full border ${border} ${softPanel} px-3 text-sm outline-none ${primaryText}`}
+                      />
+                    </div>
+                  )}
+
+                  <div className={`mt-5 border ${border} ${softPanel} p-4`}>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className={`text-xs ${secondaryText}`}>Subtotal</span>
+                      <strong className={`text-sm font-black ${primaryText}`}>
+                        {formatMoney(totalPrice)}
+                      </strong>
+                    </div>
+
+                    {serviceTransportFee > 0 && (
+                      <div className="mt-2 flex items-center justify-between gap-4">
+                        <span className={`text-xs ${secondaryText}`}>
+                          Busca + devolução
+                        </span>
+                        <strong className="text-sm font-black text-amber-400">
+                          {formatMoney(serviceTransportFee)}
+                        </strong>
+                      </div>
+                    )}
+
+                    <div className={`mt-3 flex items-center justify-between border-t ${border} pt-3`}>
+                      <span className={`text-xs font-black uppercase ${primaryText}`}>
+                        Total
+                      </span>
+                      <strong className="text-xl font-black text-cyan-400">
+                        {formatMoney(finalTotal)}
+                      </strong>
+                    </div>
+                  </div>
+
+                  {!checkoutReady && (
+                    <p className="mt-4 text-center text-[11px] font-bold text-amber-500">
+                      {!checkout.paymentMethod
+                        ? "Escolha uma forma de pagamento."
+                        : hasProducts && !checkout.productDeliveryMethod
+                          ? "Escolha como deseja receber os produtos."
+                          : hasServices && !checkout.serviceDeliveryMethod
+                            ? "Escolha como o PC chegará até a TECH LINE."
+                            : needsAddress && !addressReady
+                              ? "Preencha os campos obrigatórios do endereço."
+                              : "Revise os dados para finalizar."}
+                    </p>
+                  )}
+                </div>
+
+                <div className={`border-t ${border} p-4 md:p-5`}>
+                  {checkoutReady ? (
+                    <a
+                      href={`https://wa.me/5544991373517?text=${cartWhatsappMessage}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex min-h-14 w-full items-center justify-center bg-cyan-400 px-5 text-center text-sm font-black uppercase tracking-wide text-black transition hover:bg-cyan-300"
+                    >
+                      Finalizar pelo WhatsApp
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled
+                      className="flex min-h-14 w-full cursor-not-allowed items-center justify-center bg-zinc-500/30 px-5 text-center text-sm font-black uppercase tracking-wide text-zinc-500"
+                    >
+                      Finalizar pelo WhatsApp
+                    </button>
+                  )}
                 </div>
               </>
             )}
