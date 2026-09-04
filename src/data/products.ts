@@ -71,6 +71,10 @@ export const products: Product[] = [
     category: "Periféricos",
     subcategory: "Mouses",
     price: "R$ 109,90",
+    offer: {
+      active: true,
+      price: "R$ 90,00",
+    },
     status: "Pronta entrega",
     slug: "smailwolf-rs7",
     image: "/produtos/smailwolf-rs7/branco-1.jpg",
@@ -193,6 +197,10 @@ export const products: Product[] = [
     category: "Periféricos",
     subcategory: "Fones",
     price: "R$ 49,90",
+    offer: {
+      active: true,
+      price: "R$ 39,90",
+    },
     status: "Pronta entrega",
     slug: "fone-qkz-ak6",
     image: "/produtos/qkz-ak6/ak6-1.jpg",
@@ -241,6 +249,10 @@ export const products: Product[] = [
     category: "Periféricos",
     subcategory: "Mousepads",
     price: "R$ 34,90",
+    offer: {
+      active: true,
+      price: "R$ 24,90",
+    },
     status: "Pronta entrega",
     slug: "mousepad-gamer-70x30",
     image: "/produtos/bayaz-70x30/bayaz-1.jpg",
@@ -319,49 +331,6 @@ export const products: Product[] = [
       {
         label: "Quantidade",
         value: "5 fans por kit",
-      },
-    ],
-  },
-
-  {
-    id: 6,
-    name: "Air Cooler Revenger G-V303",
-    category: "Refrigeração",
-    subcategory: "Coolers",
-    price: "R$ 49,90",
-    status: "Pronta entrega",
-    slug: "air-cooler-revenger-g-v303",
-    image: "/produtos/revenger-g-v303/revenger-1.jpg",
-    images: [
-      "/produtos/revenger-g-v303/revenger-1.jpg",
-      "/produtos/revenger-g-v303/revenger-2.jpg",
-      "/produtos/revenger-g-v303/revenger-3.jpg",
-    ],
-
-    condition: "Novo",
-    stock: 1,
-
-    description:
-      "Air Cooler Revenger G-V303 para refrigeração do processador, disponível para pronta entrega.",
-
-    highlights: [
-      "Refrigeração para processador",
-      "Design compacto",
-      "Pronta entrega",
-    ],
-
-    specifications: [
-      {
-        label: "Marca",
-        value: "Revenger",
-      },
-      {
-        label: "Modelo",
-        value: "G-V303",
-      },
-      {
-        label: "Tipo",
-        value: "Air Cooler",
       },
     ],
   },
@@ -467,6 +436,10 @@ export const products: Product[] = [
     category: "Refrigeração",
     subcategory: "Coolers",
     price: "R$ 39,90",
+    offer: {
+      active: true,
+      price: "R$ 24,90",
+    },
     status: "Pronta entrega",
     slug: "air-cooler-mancer-hazel-120mm",
     image: "/produtos/hazel/mancer-1.jpg",
@@ -572,7 +545,7 @@ export const products: Product[] = [
       "/produtos/husky-glaze-5g/husky-3.jpg",
     ],
     condition: "Novo",
-    stock: 3,
+    stock: 2,
     description:
       "Pasta térmica Husky Glaze de 5g para auxiliar na transferência de calor entre o processador e o cooler.",
     highlights: [
@@ -586,6 +559,111 @@ export const products: Product[] = [
       { label: "Modelo", value: "Glaze" },
       { label: "Conteúdo", value: "5g" },
       { label: "Tipo", value: "Pasta térmica" },
+    ],
+  },
+
+  {
+    id: 12,
+    name: "Teclado Gamer AJAZZ x NACODEX NK61",
+    category: "Periféricos",
+    subcategory: "Teclados",
+    price: "R$ 170,00",
+    offer: {
+      active: true,
+      price: "R$ 150,00",
+    },
+    status: "Pronta entrega",
+    slug: "teclado-gamer-ajazz-nacodex-nk61",
+    image: "/produtos/teclado nk1/nk61-1.jpg",
+    images: [
+      "/produtos/teclado nk1/nk61-1.jpg",
+      "/produtos/teclado nk1/nk61-2.jpg",
+      "/produtos/teclado nk1/nk61-3.jpg",
+    ],
+    condition: "Novo",
+    stock: 1,
+    description:
+      "Teclado Gamer AJAZZ x NACODEX NK61 compacto, com iluminação RGB e visual moderno para setups gamer.",
+    highlights: [
+      "Iluminação RGB",
+      "Formato compacto",
+      "Design gamer",
+      "Pronta entrega",
+    ],
+    specifications: [
+      { label: "Marca", value: "AJAZZ x NACODEX" },
+      { label: "Modelo", value: "NK61" },
+      { label: "Tipo", value: "Teclado gamer" },
+      { label: "Iluminação", value: "RGB" },
+    ],
+  },
+
+  {
+    id: 13,
+    name: "Lightbar para Monitor 5W USB Touch",
+    category: "Periféricos",
+    subcategory: "Acessórios para Monitor",
+    price: "R$ 69,90",
+    status: "Pronta entrega",
+    slug: "lightbar-monitor-5w-usb-touch",
+    image: "/produtos/lightbar/light-1.jpg",
+    images: [
+      "/produtos/lightbar/light-1.jpg",
+      "/produtos/lightbar/light-2.jpg",
+      "/produtos/lightbar/light-3.jpg",
+    ],
+    condition: "Novo",
+    stock: 1,
+    description:
+      "Lightbar para monitor com potência de 5W, alimentação USB e acionamento touch, ideal para iluminar a área de trabalho e o setup.",
+    highlights: [
+      "Potência de 5W",
+      "Alimentação USB",
+      "Acionamento touch",
+      "Iluminação para monitor e setup",
+    ],
+    specifications: [
+      { label: "Tipo", value: "Lightbar para monitor" },
+      { label: "Potência", value: "5W" },
+      { label: "Alimentação", value: "USB" },
+      { label: "Acionamento", value: "Touch" },
+    ],
+  },
+
+  {
+    id: 14,
+    name: "Controle sem fio compatível com PS4",
+    category: "Periféricos",
+    subcategory: "Controles",
+    price: "R$ 120,00",
+    offer: {
+      active: true,
+      price: "R$ 100,00",
+    },
+    status: "Pronta entrega",
+    slug: "controle-sem-fio-compativel-ps4",
+    image: "/produtos/controlesp4/ps4-1.jpg",
+    images: [
+      "/produtos/controlesp4/ps4-1.jpg",
+      "/produtos/controlesp4/ps4-2.jpg",
+      "/produtos/controlesp4/ps4-3.jpg",
+      "/produtos/controlesp4/ps4-4.jpg",
+    ],
+    condition: "Novo",
+    stock: 2,
+    description:
+      "Controle sem fio compatível com PS4, com vibração e design no estilo do controle tradicional do console.",
+    highlights: [
+      "Conexão sem fio",
+      "Compatível com PS4",
+      "Função de vibração",
+      "Pronta entrega",
+    ],
+    specifications: [
+      { label: "Tipo", value: "Controle sem fio" },
+      { label: "Compatibilidade", value: "PS4" },
+      { label: "Vibração", value: "Sim" },
+      { label: "Cor", value: "Preto" },
     ],
   },
 
